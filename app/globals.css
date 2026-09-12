@@ -1,26 +1,156 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* ─── Font display (Geist as display) ──────────────────────────── */
 @theme inline {
+  --font-sans:    var(--font-clash-display);
+  --font-mono:    var(--font-geist-mono);
+  --font-display: var(--font-clash-display);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─── Dark theme (default) ──────────────────────────────────────── */
+:root,
+.dark {
+  color-scheme: dark;
+
+  --bg-base:      #0D0D0F;
+  --bg-surface:   #111115;
+  --bg-elevated:  #17171C;
+
+  --text-primary:   #F0F0F2;
+  --text-secondary: #9090A8;
+  --text-muted:     #50505E;
+
+  --border-color:  rgba(255,255,255,0.08);
+  --border-accent: rgba(0,102,255,0.35);
+
+  --brand-accent: #0066FF;
+  --accent-glow:  rgba(0,102,255,0.45);
+  --accent-subtle: rgba(0,102,255,0.12);
+
+  /* DotGrid */
+  --dot-core: rgba(0,102,255,0.9);
+  --dot-hi:   rgba(0,102,255,0.55);
+  --dot-dim:  rgba(255,255,255,0.06);
+  --dot-glow: rgba(0,102,255,0.25);
+
+  /* ArcDomains */
+  --arc-glow-bg: rgba(0,102,255,0.07);
+
+  /* Labels */
+  --lbl-active:    #F0F0F2;
+  --lbl-dim:       #50505E;
+  --lbl-glow:      rgba(0,102,255,0.8);
+  --lbl-glow-wide: rgba(0,102,255,0.35);
+  --sub-col:       #9090A8;
+
+  /* Compat */
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
+}
+
+/* ─── Light theme ───────────────────────────────────────────────── */
+.light {
+  color-scheme: light;
+
+  --bg-base:     #F5F4F0;
+  --bg-surface:  #FFFFFF;
+  --bg-elevated: #EFEFEB;
+
+  --text-primary:   #0D0D0F;
+  --text-secondary: #555568;
+  --text-muted:     #9090A8;
+
+  --border-color:  rgba(0,0,0,0.08);
+  --border-accent: rgba(0,102,255,0.3);
+
+  --brand-accent: #0044CC;
+  --accent-glow:  rgba(0,68,204,0.3);
+  --accent-subtle: rgba(0,68,204,0.08);
+
+  --dot-core: rgba(0,68,204,0.85);
+  --dot-hi:   rgba(0,68,204,0.5);
+  --dot-dim:  rgba(0,0,0,0.06);
+  --dot-glow: rgba(0,68,204,0.2);
+
+  --arc-glow-bg: rgba(0,68,204,0.05);
+
+  --lbl-active:    #0D0D0F;
+  --lbl-dim:       #9090A8;
+  --lbl-glow:      rgba(0,68,204,0.7);
+  --lbl-glow-wide: rgba(0,68,204,0.25);
+  --sub-col:       #555568;
+
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
+}
+
+/* ─── Base ──────────────────────────────────────────────────────── */
+html {
+  background: var(--bg-base);
+  color: var(--text-primary);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-clash-display), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bg-base { background: var(--bg-base); }
+
+/* ─── Theme init script (prevent flash) ────────────────────────── */
+/* Applied via layout.tsx inline script */
+
+/* ─── Custom cursor ─────────────────────────────────────────────── */
+@media (pointer: fine) {
+  * { cursor: none !important; }
+
+  .cursor-dot {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    background: var(--brand-accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%, -50%);
+    transition: width 0.15s, height 0.15s, background 0.15s;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .cursor-dot.clicking {
+    width: 4px;
+    height: 4px;
+  }
+
+  .cursor-ring {
+    position: fixed;
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid var(--brand-accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99998;
+    transform: translate(-50%, -50%);
+    opacity: 0.5;
+    transition: width 0.2s, height 0.2s, opacity 0.2s, border-color 0.2s;
+  }
+
+  .cursor-ring.hovering {
+    width: 48px;
+    height: 48px;
+    opacity: 0.8;
+    border-color: var(--brand-accent);
+    background: var(--accent-subtle);
+  }
+
+  .cursor-ring.clicking {
+    width: 24px;
+    height: 24px;
+    opacity: 1;
+  }
 }

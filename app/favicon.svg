@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="#0D0D0F"/>
+  <!-- I — vertical bar with top/bottom caps -->
+  <rect x="5" y="8.5" width="3.5" height="1.6" rx="0.8" fill="#F0F0F2"/>
+  <rect x="6.2" y="8.5" width="1.2" height="15" rx="0.6" fill="#F0F0F2"/>
+  <rect x="5" y="21.9" width="3.5" height="1.6" rx="0.8" fill="#F0F0F2"/>
+  <!-- 4 — vertical stroke -->
+  <rect x="17.8" y="8.5" width="1.8" height="15" rx="0.9" fill="#F0F0F2"/>
+  <!-- 4 — diagonal stroke -->
+  <line x1="18.7" y1="8.8" x2="13" y2="17.2" stroke="#F0F0F2" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- 4 — crossbar (accent) -->
+  <rect x="11.5" y="16.2" width="9.5" height="1.8" rx="0.9" fill="#0066FF"/>
+  <!-- C — open arc -->
+  <path d="M27.5 12C27 10.2 25.6 9 23.5 9C21 9 19.5 11 19.5 16C19.5 21 21 23 23.5 23C25.6 23 27 21.8 27.5 20"
+    stroke="#F0F0F2" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  <!-- Accent dot at crossbar junction -->
+  <circle cx="18.7" cy="17.1" r="2" fill="#0066FF"/>
+</svg>
