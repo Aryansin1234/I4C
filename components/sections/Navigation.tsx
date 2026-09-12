@@ -17,7 +17,8 @@ function useSmoothNav() {
   return (href: string, onDone?: () => void) => {
     const target = href === "#hero" ? document.body : document.querySelector(href);
     if (!target) return;
-    const lenis = (globalThis as { __lenis?: { scrollTo: (el: Element | HTMLElement, opts: object) => void } }).__lenis;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lenis = (globalThis as any).__lenis;
     if (lenis) {
       lenis.scrollTo(target as HTMLElement, { offset: -80, duration: 1.2, onComplete: onDone });
     } else {

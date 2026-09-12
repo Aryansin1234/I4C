@@ -112,7 +112,8 @@ export default function HeroSection() {
   function smoothNav(href: string) {
     const target = document.querySelector(href);
     if (!target) return;
-    const lenis = (globalThis as { __lenis?: { scrollTo: (el: Element, opts: object) => void } }).__lenis;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lenis = (globalThis as any).__lenis;
     if (lenis) lenis.scrollTo(target, { offset: -80, duration: 1.2 });
     else (target as HTMLElement).scrollIntoView({ behavior: "smooth" });
   }
