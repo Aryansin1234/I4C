@@ -2,9 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import DotGrid from "@/components/sections/DotGrid";
 
+// Mascot is client-only (uses pointer events API)
+const Mascot = dynamic(
+  () => import("page-mascot").then(m => m.Mascot),
+  { ssr: false }
+);
+
 const SOFT = [0.16, 1, 0.3, 1] as const;
+const BASE = process.env.NODE_ENV === "production" ? "/I4C" : "";
 
 const WORDS = [
   "design.",
@@ -73,8 +81,9 @@ function RevealWord({ children, delay, color }: { children: string; delay: numbe
 ══════════════════════════════════════════════════════════════ */
 export default function HeroSection() {
   const [show,      setShow]      = useState(false);
-  // tick increments forever — translateY always moves forward, no snap ever
   const [tick,      setTick]      = useState(0);
+  const [rightMode, setRightMode] = useState<"words" | "mascot">("words");
+  const [mascotChar, setMascotChar] = useState<"droid" | "robot" | "gearbot">("droid");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const activeIdx = tick % WORDS.length;
@@ -228,18 +237,89 @@ export default function HeroSection() {
           </motion.div>
         </div>
 
-        {/* ── RIGHT — word cycler ── */}
+        {/* ── RIGHT — toggle: word cycler vs mascot ── */}
         <div className="hidden lg:flex flex-col justify-center items-end px-8 xl:px-16 relative">
+
+          {/* ── toggle button ── */}
           <motion.div
+            className="absolute top-6 right-0 flex items-center gap-1 rounded-xl p-1 z-10"
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: show ? 1 : 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
+            transition={{ delay: 0.8 }}
+          >
+            {/* words button */}
+            <button
+              onClick={() => setRightMode("words")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono tracking-wide transition-all"
+              style={{
+                background: rightMode === "words" ? "var(--brand-accent)" : "transparent",
+                color:      rightMode === "words" ? "#fff" : "var(--text-muted)",
+              }}
+              data-cursor-hover
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 6h16M4 12h8M4 18h12"/>
+              </svg>
+              Words
+            </button>
+            {/* mascot button */}
+            <button
+              onClick={() => setRightMode("mascot")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono tracking-wide transition-all"
+              style={{
+                background: rightMode === "mascot" ? "var(--brand-accent)" : "transparent",
+                color:      rightMode === "mascot" ? "#fff" : "var(--text-muted)",
+              }}
+              data-cursor-hover
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="9" r="2"/><path d="M8 15s1 2 4 2 4-2 4-2"/>
+              </svg>
+              Mascot
+            </button>
+          </motion.div>
+
+          {/* ── mascot character picker (shown when mascot mode) ── */}
+          {rightMode === "mascot" && (
+            <motion.div
+              className="absolute top-14 right-0 flex gap-1 z-10"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {(["droid", "robot", "gearbot"] as const).map(c => (
+                <button
+                  key={c}
+                  onClick={() => setMascotChar(c)}
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-mono tracking-widest uppercase transition-all"
+                  style={{
+                    background: mascotChar === c ? "var(--accent-subtle)" : "var(--bg-surface)",
+                    border:     `1px solid ${mascotChar === c ? "var(--border-accent)" : "var(--border-color)"}`,
+                    color:      mascotChar === c ? "var(--brand-accent)" : "var(--text-muted)",
+                  }}
+                  data-cursor-hover
+                >
+                  {c}
+                </button>
+              ))}
+            </motion.div>
+          )}
+
+          {/* ── WORD CYCLER ── */}
+          <motion.div
+            animate={{ opacity: rightMode === "words" ? 1 : 0, pointerEvents: rightMode === "words" ? "auto" : "none" }}
+            transition={{ duration: 0.3 }}
             style={{
               fontSize:   WORD_FONT,
               display:    "flex",
               alignItems: "center",
               height:     "calc(7 * 1.5em)",
               gap:        "0.25em",
+              position:   "absolute",
+              inset:      0,
+              paddingLeft: "2rem",
+              paddingRight: "2rem",
             }}
           >
             <span
@@ -306,6 +386,24 @@ export default function HeroSection() {
               </div>
             </div>
           </motion.div>
+
+          {/* ── MASCOT ── */}
+          <motion.div
+            className="flex items-center justify-center"
+            animate={{ opacity: rightMode === "mascot" ? 1 : 0, pointerEvents: rightMode === "mascot" ? "auto" : "none" }}
+            transition={{ duration: 0.3 }}
+            style={{ position: "absolute", inset: 0, paddingBottom: "40px" }}
+          >
+            {show && rightMode === "mascot" && (
+              <Mascot
+                directions={`${BASE}/mascots/${mascotChar}-directions.png`}
+                reactions={`${BASE}/mascots/${mascotChar}-reactions.png`}
+                size={220}
+                label={`${mascotChar} mascot`}
+              />
+            )}
+          </motion.div>
+
         </div>
 
       </div>
