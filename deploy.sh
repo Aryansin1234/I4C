@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
+# Always run from the hackathon directory regardless of where script is called from
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 REMOTE="origin"
 BRANCH="gh-pages"
 OUT_DIR="out"
@@ -48,4 +52,4 @@ git worktree remove --force "$WORKTREE_DIR"
 
 echo ""
 echo "✓ Deployed to $BRANCH"
-echo "  Live at: $(git remote get-url $REMOTE | sed 's/\.git$//' | sed 's|https://github.tools.sap/|https://pages.github.tools.sap/|')"
+echo "  Live at: https://aryansin1234.github.io/I4C/"

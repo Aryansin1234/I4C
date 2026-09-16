@@ -9,7 +9,7 @@ interface LoadingScreenProps {
 
 type Phase = "loading" | "exit";
 
-const MIN_DURATION = 7000;
+const MIN_DURATION = 2800;
 
 const MESSAGES = [
   "Initialising workspace",
@@ -39,8 +39,8 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
     setProgress(100);
     setCounter(100);
     // hold at 100% briefly, then curtain
-    setTimeout(() => setPhase("exit"), 800);
-    setTimeout(() => onComplete(), 800 + 950);
+    setTimeout(() => setPhase("exit"), 400);
+    setTimeout(() => onComplete(), 400 + 700);
   }, [onComplete]);
 
   const tick = useCallback((ts: number) => {

@@ -19,19 +19,15 @@ import Footer from "@/components/sections/Footer";
 
 export default function Home() {
   const [loaded, setLoaded] = useState(false);
-  // Gate render until client has hydrated — prevents GSAP/Lenis
-  // from touching the DOM before React has finished reconciliation
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setHydrated(true);
-  }, []);
-
-  if (!hydrated) return null;
 
   return (
     <>
-      {!loaded && <LoadingScreen onComplete={() => setLoaded(true)} />}
+      {/* Loading screen — unmounts itself after onComplete */}
+      {!loaded && (
+        <LoadingScreen onComplete={() => setLoaded(true)} />
+      )}
+
+      {/* Main app — always in the DOM once loaded, stable tree */}
       {loaded && (
         <SmoothScrollProvider>
           <CustomCursor />

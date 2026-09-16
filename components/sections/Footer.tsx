@@ -4,7 +4,6 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
 const SOFT = [0.16, 1, 0.3, 1] as const;
-const EXPO = [0.76, 0, 0.24, 1] as const;
 
 const NAV_COLS = [
   {
@@ -19,19 +18,19 @@ const NAV_COLS = [
   {
     heading: "Participate",
     links: [
-      { label: "Register",     href: "#register"  },
-      { label: "Partners",     href: "#partners"  },
-      { label: "Criteria",     href: "#criteria"  },
+      { label: "Register",      href: "#register"  },
+      { label: "Partners",      href: "#partners"  },
+      { label: "Criteria",      href: "#criteria"  },
       { label: "What You Gain", href: "#learnings" },
     ],
   },
   {
     heading: "Company",
     links: [
-      { label: "Privacy",  href: "#" },
-      { label: "Terms",    href: "#" },
-      { label: "Contact",  href: "mailto:hackathon@company.com" },
-      { label: "About",    href: "#" },
+      { label: "Privacy", href: "#" },
+      { label: "Terms",   href: "#" },
+      { label: "Contact", href: "mailto:hackathon@company.com" },
+      { label: "About",   href: "#" },
     ],
   },
 ];
@@ -88,7 +87,7 @@ export default function Footer() {
       {/* ── Main content ── */}
       <div className="relative z-10 max-w-7xl mx-auto px-8 lg:px-20 pt-16 pb-8">
 
-        {/* Nav columns + CTA */}
+        {/* Nav columns */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-16">
 
           {/* Brand col */}
@@ -97,13 +96,15 @@ export default function Footer() {
             animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 16 }}
             transition={{ delay: 0.2, duration: 0.6, ease: SOFT }}
           >
-            <span className="font-display font-bold text-xl mb-4 block" style={{ letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
+            <span
+              className="font-display font-bold text-xl mb-4 block"
+              style={{ letterSpacing: "-0.04em", color: "var(--text-primary)" }}
+            >
               I4C<span style={{ color: "var(--brand-accent)" }}>.</span>
             </span>
             <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--text-muted)" }}>
               An internal hackathon where engineers, designers, and PMs build real solutions to real customer problems.
             </p>
-            {/* Socials */}
             <div className="flex items-center gap-3">
               {SOCIALS.map((s) => (
                 <motion.a
@@ -138,7 +139,10 @@ export default function Footer() {
               animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 16 }}
               transition={{ delay: 0.28 + ci * 0.06, duration: 0.6, ease: SOFT }}
             >
-              <p className="text-[10px] font-mono tracking-[0.22em] uppercase mb-4" style={{ color: "var(--text-muted)" }}>
+              <p
+                className="text-[10px] font-mono tracking-[0.22em] uppercase mb-4"
+                style={{ color: "var(--text-muted)" }}
+              >
                 {col.heading}
               </p>
               <ul className="flex flex-col gap-2.5">
@@ -169,18 +173,21 @@ export default function Footer() {
           transition={{ delay: 0.55, duration: 0.6 }}
         >
           <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-            © 2026 Company. Invent for Customers — internal hackathon event.
+            © 2026 SAP Labs India. Invent for Customers — internal hackathon event.
           </p>
-
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
               Built with
             </span>
-            {["Next.js", "Framer Motion", "GSAP"].map((tech, i) => (
+            {["Next.js", "Framer Motion", "GSAP"].map((tech) => (
               <span
                 key={tech}
                 className="text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-0.5 rounded"
-                style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border-color)" }}
+                style={{
+                  background: "var(--bg-surface)",
+                  color: "var(--text-muted)",
+                  border: "1px solid var(--border-color)",
+                }}
               >
                 {tech}
               </span>

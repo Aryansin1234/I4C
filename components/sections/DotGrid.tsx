@@ -10,9 +10,9 @@ interface Dot {
   opacity: number;
 }
 
-const SPACING   = 36;
-const REPEL_R   = 130;
-const REPEL_STR = 6;
+const SPACING   = 24;
+const REPEL_R   = 160;
+const REPEL_STR = 8;
 const FRICTION  = 0.82;
 const RETURN    = 0.11;
 
@@ -43,8 +43,8 @@ export default function DotGrid() {
           dots.push({
             bx, by, x: bx, y: by,
             vx: 0, vy: 0,
-            size: Math.random() > 0.85 ? 1.8 : 1.2,
-            opacity: Math.random() * 0.28 + 0.10,
+            size: Math.random() > 0.85 ? 2.2 : 1.5,
+            opacity: Math.random() * 0.35 + 0.12,
           });
         }
       }
@@ -56,7 +56,7 @@ export default function DotGrid() {
       H = canvas.offsetHeight;
       canvas.width  = W * dpr;
       canvas.height = H * dpr;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       buildDots();
     };
 
@@ -88,15 +88,24 @@ export default function DotGrid() {
         d.x  += d.vx;
         d.y  += d.vy;
 
+        const isDark = document.documentElement.classList.contains("dark");
+
         const disp      = Math.sqrt((d.x - d.bx) ** 2 + (d.y - d.by) ** 2);
         const dispBoost = Math.min(disp / 18, 1) * 0.5;
         const alpha     = d.opacity + dispBoost;
 
-        // Grey at rest → blue when displaced
+        // rest color: dark mode → dark grey, light mode → light grey
+        // displaced: shifts toward blue in both modes
         const t = Math.min(disp / 28, 1);
-        const r = Math.round(44  + t * (0   - 44));
-        const g = Math.round(44  + t * (102 - 44));
-        const b = Math.round(56  + t * (255 - 56));
+        const r = isDark
+          ? Math.round(44  + t * (0   - 44))
+          : Math.round(200 + t * (0   - 200));
+        const g = isDark
+          ? Math.round(44  + t * (102 - 44))
+          : Math.round(200 + t * (102 - 200));
+        const b = isDark
+          ? Math.round(56  + t * (255 - 56))
+          : Math.round(220 + t * (255 - 220));
 
         ctx.beginPath();
         ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);

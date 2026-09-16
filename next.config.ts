@@ -4,11 +4,11 @@ const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
   output: "export",
-  // Repo name on GitHub — changes asset paths to /I4C-Website/...
-  basePath: isProd ? "/I578504/I4C-Website" : "",
-  assetPrefix: isProd ? "/I578504/I4C-Website/" : "",
+  reactStrictMode: false,  // prevents double-invoke that breaks GSAP/DOM libs
+  basePath: isProd ? "/I4C" : "",
+  assetPrefix: isProd ? "/I4C/" : "",
   images: {
-    unoptimized: true, // required for static export
+    unoptimized: true,
   },
   trailingSlash: true,
 };

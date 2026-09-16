@@ -1,60 +1,66 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  motion,
-  useScroll,
-  useTransform,
-  useSpring,
-  useMotionValue,
-  useMotionTemplate,
-} from "framer-motion";
+import { motion } from "framer-motion";
 import DotGrid from "@/components/sections/DotGrid";
 
 const SOFT = [0.16, 1, 0.3, 1] as const;
 
+const WORDS = [
+  "design.",
+  "prototype.",
+  "solve.",
+  "build.",
+  "develop.",
+  "debug.",
+  "learn.",
+  "ship.",
+  "collaborate.",
+  "create.",
+  "innovate.",
+  "test.",
+  "optimize.",
+  "inspire.",
+  "transform.",
+  "deploy.",
+  "win.",
+];
+
+function wordHue(i: number) {
+  // Full 360° cycle — last word hue is close to first, seamless loop
+  return Math.round((i / WORDS.length) * 360);
+}
+
+const INTERVAL_MS  = 2000;
+
 /* ── Stat pill ───────────────────────────────────────────────── */
-function StatPill({ value, label, delay }: { value: string; label: string; delay: number }) {
+function StatPill({ value, label }: { value: string; label: string }) {
   return (
     <motion.div
-      className="flex flex-col items-center px-5 py-3 rounded-2xl"
+      className="flex flex-col items-start px-4 py-2.5 rounded-xl"
       style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)" }}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: SOFT, delay }}
-      whileHover={{ borderColor: "var(--border-accent)", boxShadow: "0 0 28px var(--accent-glow)", y: -3 }}
+      whileHover={{ borderColor: "var(--border-accent)", boxShadow: "0 0 20px var(--accent-glow)", y: -2 }}
       data-cursor-hover
     >
-      <span
-        className="font-display font-bold leading-none"
-        style={{ fontSize: "clamp(1.3rem,2.5vw,1.8rem)", letterSpacing: "-0.04em", color: "var(--brand-accent)" }}
-      >
+      <span className="font-display font-bold leading-none"
+        style={{ fontSize: "clamp(1rem,1.6vw,1.4rem)", letterSpacing: "-0.04em", color: "var(--brand-accent)" }}>
         {value}
       </span>
-      <span className="text-[10px] font-mono tracking-widest uppercase mt-1" style={{ color: "var(--text-muted)" }}>
+      <span className="text-[9px] font-mono tracking-widest uppercase mt-1" style={{ color: "var(--text-muted)" }}>
         {label}
       </span>
     </motion.div>
   );
 }
 
-/* ── Word reveal — each word clips up from below ────────────── */
-function RevealWord({
-  children,
-  delay,
-  color,
-}: {
-  children: string;
-  delay: number;
-  color?: string;
-}) {
+function RevealWord({ children, delay, color }: { children: string; delay: number; color?: string }) {
   return (
-    <span style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom" }}>
+    <span style={{ display: "inline-block", overflow: "visible", verticalAlign: "bottom", paddingBottom: "0.05em" }}>
       <motion.span
         style={{ display: "inline-block", color: color ?? "var(--text-primary)" }}
-        initial={{ y: "100%", opacity: 0 }}
+        initial={{ y: "105%", opacity: 0 }}
         animate={{ y: "0%", opacity: 1 }}
-        transition={{ duration: 0.75, ease: SOFT, delay }}
+        transition={{ duration: 0.85, ease: SOFT, delay }}
       >
         {children}
       </motion.span>
@@ -66,48 +72,32 @@ function RevealWord({
    HERO
 ══════════════════════════════════════════════════════════════ */
 export default function HeroSection() {
-  const sectionRef = useRef<HTMLElement>(null);
+  const [show,      setShow]      = useState(false);
+  // tick increments forever — translateY always moves forward, no snap ever
+  const [tick,      setTick]      = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  /* scroll exit */
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
-  const contentY         = useTransform(scrollYProgress, [0, 0.55], ["0%", "-38%"]);
-  const contentOpacity   = useTransform(scrollYProgress, [0, 0.42], [1, 0]);
-  const contentScale     = useTransform(scrollYProgress, [0, 0.55], [1, 0.88]);
-  const glowOpacity      = useTransform(scrollYProgress, [0, 0.40], [1, 0]);
-  const scrollIndOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
+  const activeIdx = tick % WORDS.length;
 
-  /* mouse parallax */
-  const rawX    = useMotionValue(0);
-  const rawY    = useMotionValue(0);
-  const springX = useSpring(rawX, { stiffness: 60, damping: 20 });
-  const springY = useSpring(rawY, { stiffness: 60, damping: 20 });
-  const badgeX  = useTransform(springX, v => v *  8);
-  const badgeY  = useTransform(springY, v => v *  6);
-  const headX   = useTransform(springX, v => v * -12);
-  const headY   = useTransform(springY, v => v *  -8);
-  const subX    = useTransform(springX, v => v *  5);
-  const subY    = useTransform(springY, v => v *  4);
-  const glowX   = useTransform(springX, v => 50 + v * 12);
-  const glowY   = useTransform(springY, v => 40 + v *  8);
-  const spotBg  = useMotionTemplate`radial-gradient(ellipse 65% 50% at ${glowX}% ${glowY}%, var(--accent-subtle), transparent 70%)`;
+  // We render COPIES copies of WORDS. Keep tick < COPIES * WORDS.length
+  // by doing a silent DOM-only reset every COPIES cycles — user never sees it
+  // because the visual position is identical (modular arithmetic).
+  const COPIES = 6;
+  // Effective tick for transform: cycles within COPIES * WORDS.length
+  const effectiveTick = tick % (COPIES * WORDS.length);
 
   useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const onMove = (e: MouseEvent) => {
-      const r = el.getBoundingClientRect();
-      rawX.set((e.clientX - r.left) / r.width  - 0.5);
-      rawY.set((e.clientY - r.top)  / r.height - 0.5);
-    };
-    el.addEventListener("mousemove", onMove);
-    return () => el.removeEventListener("mousemove", onMove);
-  }, [rawX, rawY]);
-
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setShow(true), 80);
+    const t = setTimeout(() => setShow(true), 100);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (!show) return;
+    intervalRef.current = setInterval(() => {
+      setTick(t => t + 1);
+    }, INTERVAL_MS);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [show]);
 
   function smoothNav(href: string) {
     const target = document.querySelector(href);
@@ -118,151 +108,207 @@ export default function HeroSection() {
     else (target as HTMLElement).scrollIntoView({ behavior: "smooth" });
   }
 
+  const WORD_FONT = "clamp(1.6rem, 3vw, 3.5rem)";
+
   return (
     <section
-      ref={sectionRef}
       id="hero"
-      className="relative flex flex-col items-center justify-center overflow-hidden"
-      style={{ minHeight: "100vh", background: "var(--bg-base)", paddingTop: "80px" }}
+      className="relative min-h-screen flex flex-col"
+      style={{ background: "var(--bg-base)", paddingTop: "80px" }}
     >
-      <div className="absolute inset-0"><DotGrid /></div>
+      {/* ambient dot grid — full hero, behind all content */}
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+        <DotGrid />
+      </div>
 
-      <motion.div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: spotBg, opacity: glowOpacity }}
-      />
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-80px)] relative" style={{ zIndex: 1 }}>
 
-      <motion.div
-        className="relative z-10 flex flex-col items-center text-center px-6 w-full max-w-5xl mx-auto"
-        style={{ y: contentY, opacity: contentOpacity, scale: contentScale }}
-      >
-        {/* badge */}
-        <motion.div
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-10"
-          style={{ background: "var(--accent-subtle)", border: "1px solid var(--border-accent)", x: badgeX, y: badgeY }}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: show ? 1 : 0, y: show ? 0 : 12 }}
-          transition={{ duration: 0.6, ease: SOFT }}
-        >
-          <motion.span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: "var(--brand-accent)" }}
-            animate={{ boxShadow: ["0 0 4px var(--brand-accent)", "0 0 14px var(--brand-accent)", "0 0 4px var(--brand-accent)"] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-          <span className="text-[11px] font-mono tracking-[0.2em] uppercase" style={{ color: "var(--brand-accent)" }}>
-            Nov 2025 · SAP Labs India
-          </span>
-        </motion.div>
+        {/* ── LEFT ── */}
+        <div className="flex flex-col justify-center px-8 md:px-14 lg:px-16 xl:px-20 py-16">
 
-        {/* headline — word-by-word clip reveal with parallax */}
-        {show && (
           <motion.div
-            className="mb-6 leading-none font-display font-bold"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-10 w-fit"
+            style={{ background: "var(--accent-subtle)", border: "1px solid var(--border-accent)" }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: show ? 1 : 0, y: show ? 0 : 12 }}
+            transition={{ duration: 0.6, ease: SOFT }}
+          >
+            <motion.span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ background: "var(--brand-accent)" }}
+              animate={{ boxShadow: ["0 0 4px var(--brand-accent)", "0 0 14px var(--brand-accent)", "0 0 4px var(--brand-accent)"] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+            <span className="text-[11px] font-mono tracking-[0.2em] uppercase" style={{ color: "var(--brand-accent)" }}>
+              Nov 2025 · SAP Labs India
+            </span>
+          </motion.div>
+
+          <div
+            className="font-display font-bold mb-6 leading-[1]"
+            style={{ fontSize: "clamp(3.8rem, 8vw, 9.5rem)", letterSpacing: "-0.05em" }}
+          >
+            {show && (
+              <>
+                <div className="flex flex-wrap gap-x-[0.2em] mb-1">
+                  <RevealWord delay={0.1}>Invent</RevealWord>
+                  <RevealWord delay={0.22}>for</RevealWord>
+                </div>
+                <div>
+                  <RevealWord delay={0.36} color="var(--brand-accent)">Customers</RevealWord>
+                </div>
+              </>
+            )}
+          </div>
+
+          <motion.div
+            className="h-px mb-7 w-12"
+            style={{ background: "var(--border-accent)", transformOrigin: "left" }}
+            initial={{ scaleX: 0, opacity: 0 }}
+            animate={{ scaleX: show ? 1 : 0, opacity: show ? 1 : 0 }}
+            transition={{ duration: 0.5, ease: SOFT, delay: 0.58 }}
+          />
+
+          <motion.p
+            className="text-base leading-relaxed mb-10 max-w-sm"
+            style={{ color: "var(--text-secondary)" }}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: show ? 1 : 0, y: show ? 0 : 14 }}
+            transition={{ duration: 0.7, ease: SOFT, delay: 0.66 }}
+          >
+            48 hours. Real problems from{" "}
+            <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>Apple</span>{" "}
+            and partners. Winners get fast-tracked into product.
+          </motion.p>
+
+          <motion.div
+            className="flex flex-wrap gap-3 mb-10"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: show ? 1 : 0, y: show ? 0 : 14 }}
+            transition={{ duration: 0.7, ease: SOFT, delay: 0.8 }}
+          >
+            <motion.button
+              onClick={() => smoothNav("#register")}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-white"
+              style={{ background: "var(--brand-accent)", boxShadow: "0 0 28px var(--accent-glow)" }}
+              whileHover={{ scale: 1.05, boxShadow: "0 0 48px var(--accent-glow)" }}
+              whileTap={{ scale: 0.96 }}
+              data-cursor-hover
+            >
+              Register Now
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M7 17L17 7M17 7H7M17 7v10" />
+              </svg>
+            </motion.button>
+            <motion.button
+              onClick={() => smoothNav("#overview")}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm"
+              style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}
+              whileHover={{ borderColor: "var(--border-accent)", boxShadow: "0 0 18px var(--accent-glow)" }}
+              whileTap={{ scale: 0.96 }}
+              data-cursor-hover
+            >
+              Learn More
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M19 9l-7 7-7-7" />
+              </svg>
+            </motion.button>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-2 gap-2.5 max-w-[16rem]"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: show ? 1 : 0, y: show ? 0 : 14 }}
+            transition={{ duration: 0.7, ease: SOFT, delay: 0.94 }}
+          >
+            <StatPill value="48h"  label="Build sprint" />
+            <StatPill value="20+"  label="Teams"        />
+            <StatPill value="$18K" label="Prize pool"   />
+            <StatPill value="3"    label="Partners"     />
+          </motion.div>
+        </div>
+
+        {/* ── RIGHT — word cycler ── */}
+        <div className="hidden lg:flex flex-col justify-center items-end px-8 xl:px-16 relative">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: show ? 1 : 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
             style={{
-              fontSize: "clamp(3.8rem, 11vw, 10.5rem)",
-              letterSpacing: "-0.05em",
-              x: headX,
-              y: headY,
+              fontSize:   WORD_FONT,
+              display:    "flex",
+              alignItems: "center",
+              height:     "calc(7 * 1.5em)",
+              gap:        "0.25em",
             }}
           >
-            {/* line 1 */}
-            <div className="flex flex-wrap justify-center gap-x-[0.22em] mb-1">
-              <RevealWord delay={0.1}>Invent</RevealWord>
-              <RevealWord delay={0.22}>for</RevealWord>
-            </div>
-            {/* line 2 */}
-            <div className="flex flex-wrap justify-center">
-              <RevealWord delay={0.36} color="var(--brand-accent)">Customers</RevealWord>
+            <span
+              className="font-display font-bold select-none"
+              style={{
+                fontSize:      WORD_FONT,
+                letterSpacing: "-0.05em",
+                lineHeight:    1,
+                color:         "var(--text-primary)",
+                whiteSpace:    "nowrap",
+                flexShrink:    0,
+              }}
+            >
+              You Can
+            </span>
+
+            <div
+              style={{
+                position: "relative",
+                flex:     1,
+                overflow: "hidden",
+                height:   "100%",
+                WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%)",
+                maskImage:       "linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%)",
+              }}
+            >
+              <div
+                style={{
+                  transform:  `translateY(calc(${-(effectiveTick + WORDS.length)} * 1.5em))`,
+                  transition: "transform 0.55s cubic-bezier(0.16,1,0.3,1)",
+                  paddingTop: "calc(3 * 1.5em)",
+                }}
+              >
+                {Array.from({ length: COPIES + 2 }).flatMap((_, copy) =>
+                  WORDS.map((word, wi) => {
+                    const globalI   = copy * WORDS.length + wi;
+                    const midActive = effectiveTick + WORDS.length;
+                    const dist      = Math.abs(globalI - midActive);
+                    const opacity   = dist === 0 ? 1
+                      : dist === 1 ? 0.4
+                      : dist === 2 ? 0.2
+                      : dist === 3 ? 0.1
+                      : 0.05;
+                    const display = word.charAt(0).toUpperCase() + word.slice(1);
+                    return (
+                      <div
+                        key={`${copy}-${wi}`}
+                        style={{ lineHeight: 1.5, opacity, transition: "opacity 0.4s ease" }}
+                      >
+                        <span
+                          className="font-display font-bold select-none"
+                          style={{
+                            fontSize:      WORD_FONT,
+                            letterSpacing: "-0.05em",
+                            color:         `oklch(68% 0.19 ${wordHue(wi)})`,
+                          }}
+                        >
+                          {display}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
           </motion.div>
-        )}
-
-        {/* hairline rule */}
-        <motion.div
-          className="w-16 h-px mb-8"
-          style={{ background: "var(--border-accent)" }}
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: show ? 1 : 0, opacity: show ? 1 : 0 }}
-          transition={{ duration: 0.6, ease: SOFT, delay: 0.65 }}
-        />
-
-        {/* sub */}
-        <motion.p
-          className="max-w-lg text-lg leading-relaxed mb-10"
-          style={{ color: "var(--text-secondary)", x: subX, y: subY }}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: show ? 1 : 0, y: show ? 0 : 14 }}
-          transition={{ duration: 0.7, ease: SOFT, delay: 0.72 }}
-        >
-          48 hours. Real problems from{" "}
-          <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>Apple</span> and partners.
-          Real engineers judging. Winners get fast-tracked into product.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          className="flex flex-wrap gap-3 justify-center mb-14"
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: show ? 1 : 0, y: show ? 0 : 14 }}
-          transition={{ duration: 0.7, ease: SOFT, delay: 0.86 }}
-        >
-          <motion.button
-            onClick={() => smoothNav("#register")}
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm text-white"
-            style={{ background: "var(--brand-accent)", boxShadow: "0 0 32px var(--accent-glow)" }}
-            whileHover={{ scale: 1.05, boxShadow: "0 0 52px var(--accent-glow)" }}
-            whileTap={{ scale: 0.96 }}
-            data-cursor-hover
-          >
-            Register Now
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M7 17L17 7M17 7H7M17 7v10" />
-            </svg>
-          </motion.button>
-
-          <motion.button
-            onClick={() => smoothNav("#overview")}
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-bold text-sm"
-            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)", color: "var(--text-primary)" }}
-            whileHover={{ borderColor: "var(--border-accent)", boxShadow: "0 0 20px var(--accent-glow)" }}
-            whileTap={{ scale: 0.96 }}
-            data-cursor-hover
-          >
-            Learn More
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M19 9l-7 7-7-7" />
-            </svg>
-          </motion.button>
-        </motion.div>
-
-        {/* stats */}
-        <div className="flex flex-wrap gap-3 justify-center">
-          <StatPill value="48h"  label="Build sprint" delay={1.0} />
-          <StatPill value="20+"  label="Teams"        delay={1.08} />
-          <StatPill value="$18K" label="Prize pool"   delay={1.16} />
-          <StatPill value="3"    label="Partners"     delay={1.24} />
         </div>
-      </motion.div>
 
-      {/* scroll hint */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
-        style={{ opacity: scrollIndOpacity }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: show ? 1 : 0 }}
-        transition={{ delay: 1.5, duration: 0.7 }}
-      >
-        <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: "var(--text-muted)" }}>
-          Scroll
-        </span>
-        <motion.div
-          className="w-px h-8"
-          style={{ background: "linear-gradient(to bottom, var(--brand-accent), transparent)" }}
-          animate={{ scaleY: [0.4, 1, 0.4], opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </motion.div>
+      </div>
     </section>
   );
 }
