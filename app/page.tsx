@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 import LoadingScreen from "@/components/sections/LoadingScreen";
 import AIOrb from "@/components/ui-custom/AIOrb";
@@ -20,15 +20,23 @@ import Footer from "@/components/sections/Footer";
 export default function Home() {
   const [loaded, setLoaded] = useState(false);
 
+  const handleLoaded = () => {
+    setLoaded(true);
+    // Signal ScrollTrigger to refresh after the DOM becomes visible
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("app-loaded"));
+    }, 50);
+  };
+
   return (
     <>
-      {/* Loading screen — unmounts itself after onComplete */}
-      {!loaded && (
-        <LoadingScreen onComplete={() => setLoaded(true)} />
-      )}
+      {/* Loading screen — always mounted until complete, then hidden */}
+      <div style={{ display: loaded ? "none" : "block" }}>
+        <LoadingScreen onComplete={handleLoaded} />
+      </div>
 
-      {/* Main app — always in the DOM once loaded, stable tree */}
-      {loaded && (
+      {/* Main app — always in DOM, stable tree, never conditionally mounted */}
+      <div style={{ display: loaded ? "block" : "none" }}>
         <SmoothScrollProvider>
           <CustomCursor />
           <AIOrb />
@@ -46,7 +54,7 @@ export default function Home() {
           </main>
           <Footer />
         </SmoothScrollProvider>
-      )}
+      </div>
     </>
   );
 }

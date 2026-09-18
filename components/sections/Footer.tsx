@@ -67,7 +67,7 @@ const SOCIALS = [
 
 export default function Footer() {
   const ref    = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: false, amount: 0.15 });
+  const inView = useInView(ref, { once: false, amount: 0.15, margin: "0px 0px -150px 0px" });
 
   return (
     <footer
@@ -83,47 +83,30 @@ export default function Footer() {
           background: "radial-gradient(ellipse 60% 40% at 50% 100%, var(--accent-subtle) 0%, transparent 70%)",
         }}
       />
-
       {/* ── Main content ── */}
-      <div className="relative z-10 max-w-7xl mx-auto px-8 lg:px-20 pt-16 pb-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-8 lg:px-20 pt-10 lg:pt-16 pb-6 lg:pb-8">
 
-        {/* Nav columns */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-16">
-
-          {/* Brand col */}
+        {/* ── MOBILE layout ── */}
+        <div className="md:hidden">
+          {/* Brand row */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 16 }}
-            transition={{ delay: 0.2, duration: 0.6, ease: SOFT }}
+            className="flex items-center justify-between mb-6"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 12 }}
+            transition={{ delay: 0.1, duration: 0.5, ease: SOFT }}
           >
-            <span
-              className="font-display font-bold text-xl mb-4 block"
-              style={{ letterSpacing: "-0.04em", color: "var(--text-primary)" }}
-            >
+            <span className="font-display font-bold text-xl" style={{ letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
               I4C<span style={{ color: "var(--brand-accent)" }}>.</span>
             </span>
-            <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--text-muted)" }}>
-              An internal hackathon where engineers, designers, and PMs build real solutions to real customer problems.
-            </p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {SOCIALS.map((s) => (
                 <motion.a
                   key={s.label}
                   href={s.href}
                   aria-label={s.label}
                   className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{
-                    background: "var(--bg-surface)",
-                    border: "1px solid var(--border-color)",
-                    color: "var(--text-muted)",
-                  }}
-                  whileHover={{
-                    borderColor: "var(--border-accent)",
-                    color: "var(--brand-accent)",
-                    y: -2,
-                    boxShadow: "0 4px 16px var(--accent-glow)",
-                  }}
-                  transition={{ duration: 0.18 }}
+                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)", color: "var(--text-muted)" }}
+                  whileTap={{ scale: 0.92 }}
                 >
                   {s.icon}
                 </motion.a>
@@ -131,69 +114,141 @@ export default function Footer() {
             </div>
           </motion.div>
 
-          {/* Link columns */}
-          {NAV_COLS.map((col, ci) => (
-            <motion.div
-              key={col.heading}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 16 }}
-              transition={{ delay: 0.28 + ci * 0.06, duration: 0.6, ease: SOFT }}
-            >
-              <p
-                className="text-[10px] font-mono tracking-[0.22em] uppercase mb-4"
-                style={{ color: "var(--text-muted)" }}
+          {/* All links in 2-col grid */}
+          <motion.div
+            className="grid grid-cols-2 gap-x-6 gap-y-1 mb-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: inView ? 1 : 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            {NAV_COLS.flatMap((col) => col.links).map((l) => (
+              <a
+                key={l.label}
+                href={l.href}
+                className="text-sm py-1.5"
+                style={{ color: "var(--text-secondary)" }}
               >
-                {col.heading}
-              </p>
-              <ul className="flex flex-col gap-2.5">
-                {col.links.map((l) => (
-                  <li key={l.label}>
-                    <motion.a
-                      href={l.href}
-                      className="text-sm inline-flex items-center gap-1"
-                      style={{ color: "var(--text-secondary)" }}
-                      whileHover={{ color: "var(--text-primary)", x: 3 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      {l.label}
-                    </motion.a>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          ))}
+                {l.label}
+              </a>
+            ))}
+          </motion.div>
+
+          {/* Bottom */}
+          <motion.div
+            className="pt-4 flex flex-col gap-1"
+            style={{ borderTop: "1px solid var(--border-color)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: inView ? 1 : 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <p className="text-[11px] font-mono" style={{ color: "var(--text-muted)" }}>
+              © 2026 SAP Labs India · Invent for Customers
+            </p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-mono" style={{ color: "var(--text-muted)" }}>Built with</span>
+              {["Next.js", "Framer Motion", "GSAP"].map((tech) => (
+                <span
+                  key={tech}
+                  className="text-[9px] font-mono tracking-[0.12em] uppercase px-1.5 py-0.5 rounded"
+                  style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border-color)" }}
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </motion.div>
         </div>
 
-        {/* Bottom bar */}
-        <motion.div
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-8"
-          style={{ borderTop: "1px solid var(--border-color)" }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: inView ? 1 : 0 }}
-          transition={{ delay: 0.55, duration: 0.6 }}
-        >
-          <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-            © 2026 SAP Labs India. Invent for Customers — internal hackathon event.
-          </p>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-              Built with
-            </span>
-            {["Next.js", "Framer Motion", "GSAP"].map((tech) => (
-              <span
-                key={tech}
-                className="text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-0.5 rounded"
-                style={{
-                  background: "var(--bg-surface)",
-                  color: "var(--text-muted)",
-                  border: "1px solid var(--border-color)",
-                }}
-              >
-                {tech}
+        {/* ── DESKTOP layout (unchanged) ── */}
+        <div className="hidden md:block">
+          {/* Nav columns */}
+          <div className="grid grid-cols-4 gap-10 mb-16">
+
+            {/* Brand col */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 16 }}
+              transition={{ delay: 0.2, duration: 0.6, ease: SOFT }}
+            >
+              <span className="font-display font-bold text-xl mb-4 block" style={{ letterSpacing: "-0.04em", color: "var(--text-primary)" }}>
+                I4C<span style={{ color: "var(--brand-accent)" }}>.</span>
               </span>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--text-muted)" }}>
+                An internal hackathon where engineers, designers, and PMs build real solutions to real customer problems.
+              </p>
+              <div className="flex items-center gap-3">
+                {SOCIALS.map((s) => (
+                  <motion.a
+                    key={s.label}
+                    href={s.href}
+                    aria-label={s.label}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)", color: "var(--text-muted)" }}
+                    whileHover={{ borderColor: "var(--border-accent)", color: "var(--brand-accent)", y: -2, boxShadow: "0 4px 16px var(--accent-glow)" }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {s.icon}
+                  </motion.a>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Link columns */}
+            {NAV_COLS.map((col, ci) => (
+              <motion.div
+                key={col.heading}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 16 }}
+                transition={{ delay: 0.28 + ci * 0.06, duration: 0.6, ease: SOFT }}
+              >
+                <p className="text-[10px] font-mono tracking-[0.22em] uppercase mb-4" style={{ color: "var(--text-muted)" }}>
+                  {col.heading}
+                </p>
+                <ul className="flex flex-col gap-2.5">
+                  {col.links.map((l) => (
+                    <li key={l.label}>
+                      <motion.a
+                        href={l.href}
+                        className="text-sm"
+                        style={{ color: "var(--text-secondary)" }}
+                        whileHover={{ color: "var(--text-primary)", x: 3 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        {l.label}
+                      </motion.a>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
             ))}
           </div>
-        </motion.div>
+
+          {/* Bottom bar */}
+          <motion.div
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-8"
+            style={{ borderTop: "1px solid var(--border-color)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: inView ? 1 : 0 }}
+            transition={{ delay: 0.55, duration: 0.6 }}
+          >
+            <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+              © 2026 SAP Labs India. Invent for Customers — internal hackathon event.
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Built with</span>
+              {["Next.js", "Framer Motion", "GSAP"].map((tech) => (
+                <span
+                  key={tech}
+                  className="text-[10px] font-mono tracking-[0.15em] uppercase px-2 py-0.5 rounded"
+                  style={{ background: "var(--bg-surface)", color: "var(--text-muted)", border: "1px solid var(--border-color)" }}
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
       </div>
     </footer>
   );

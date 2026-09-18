@@ -74,7 +74,7 @@ const PROCESS = [
 /* ─── Rolling counter ───────────────────────────────────────── */
 function Counter({ to, prefix = "", suffix = "" }: { to: number; prefix?: string; suffix?: string }) {
   const ref    = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: false });
+  const inView = useInView(ref, { once: false, margin: "0px 0px -150px 0px" });
   const [val, setVal] = useState(0);
 
   useEffect(() => {
@@ -115,7 +115,7 @@ function ClipLine({ children, inView, delay, style }: {
 ══════════════════════════════════════════════════════════════ */
 function Panel1() {
   const ref    = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: false, amount: 0.5 });
+  const inView = useInView(ref, { once: false, amount: 0.5, margin: "0px 0px -150px 0px" });
 
   return (
     <div
@@ -205,7 +205,7 @@ function Panel1() {
       </div>
 
       <div className="absolute right-6 bottom-4 font-display font-bold pointer-events-none select-none hidden lg:block"
-        style={{ fontSize: "clamp(10rem, 22vw, 20rem)", lineHeight: 1, color: "var(--bg-surface)", letterSpacing: "-0.06em" }}>
+        style={{ fontSize: "clamp(10rem, 22vw, 20rem)", lineHeight: 1, color: "transparent", WebkitTextStroke: "1px var(--border-color)", letterSpacing: "-0.06em" }}>
         01
       </div>
     </div>
@@ -217,7 +217,7 @@ function Panel1() {
 ══════════════════════════════════════════════════════════════ */
 function Panel2() {
   const ref    = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: false, amount: 0.5 });
+  const inView = useInView(ref, { once: false, amount: 0.5, margin: "0px 0px -150px 0px" });
   const barsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
@@ -264,7 +264,7 @@ function Panel2() {
         </motion.p>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-px"
-          style={{ border: "1px solid var(--border-color)", borderRadius: "1.25rem", overflow: "hidden" }}>
+          style={{ border: "1px solid var(--border-color)", borderRadius: "1.25rem", overflow: "hidden", boxShadow: "0 0 0 1px var(--border-color), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
           {STATS.map((s, i) => (
             <motion.div key={s.label}
               className="flex flex-col justify-between p-6"
@@ -291,7 +291,7 @@ function Panel2() {
       </div>
 
       <div className="absolute right-6 bottom-4 font-display font-bold pointer-events-none select-none hidden lg:block"
-        style={{ fontSize: "clamp(10rem, 22vw, 20rem)", lineHeight: 1, color: "var(--bg-surface)", letterSpacing: "-0.06em" }}>
+        style={{ fontSize: "clamp(10rem, 22vw, 20rem)", lineHeight: 1, color: "transparent", WebkitTextStroke: "1px var(--border-color)", letterSpacing: "-0.06em" }}>
         02
       </div>
     </div>
@@ -303,7 +303,7 @@ function Panel2() {
 ══════════════════════════════════════════════════════════════ */
 function Panel3() {
   const ref    = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: false, amount: 0.5 });
+  const inView = useInView(ref, { once: false, amount: 0.5, margin: "0px 0px -150px 0px" });
 
   return (
     <div
@@ -390,7 +390,7 @@ function Panel3() {
       </div>
 
       <div className="absolute right-6 bottom-4 font-display font-bold pointer-events-none select-none hidden lg:block"
-        style={{ fontSize: "clamp(10rem, 22vw, 20rem)", lineHeight: 1, color: "var(--bg-surface)", letterSpacing: "-0.06em" }}>
+        style={{ fontSize: "clamp(10rem, 22vw, 20rem)", lineHeight: 1, color: "transparent", WebkitTextStroke: "1px var(--border-color)", letterSpacing: "-0.06em" }}>
         03
       </div>
     </div>
@@ -407,9 +407,9 @@ export default function OverviewSection() {
 
   useEffect(() => {
     const isMobile = () => window.innerWidth < 768;
-    if (isMobile()) return;
 
     const init = () => {
+      if (isMobile()) return;
       const section   = sectionRef.current;
       const container = containerRef.current;
       if (!section || !container) return;
@@ -428,25 +428,48 @@ export default function OverviewSection() {
         onUpdate: (self) => gsap.set(container, { x: -scrollDist * self.progress }),
         onRefresh: () => gsap.set(container, { x: 0 }),
       });
+
+      ScrollTrigger.refresh();
     };
 
-    const t = setTimeout(() => { init(); ScrollTrigger.refresh(); }, 120);
-    const onResize = () => { if (isMobile()) { stRef.current?.kill(); return; } init(); };
+    // Wait for app-loaded event (fires after loading screen hides and DOM is visible)
+    const onAppLoaded = () => {
+      // Small frame delay so display:block has painted
+      requestAnimationFrame(() => requestAnimationFrame(init));
+    };
+    window.addEventListener("app-loaded", onAppLoaded);
+
+    // Also try a delayed init in case the event already fired
+    const t = setTimeout(() => {
+      if (!stRef.current) init();
+    }, 300);
+
+    const onResize = () => {
+      if (isMobile()) { stRef.current?.kill(); stRef.current = null; return; }
+      init();
+    };
     window.addEventListener("resize", onResize);
 
     return () => {
       clearTimeout(t);
       stRef.current?.kill();
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("app-loaded", onAppLoaded);
     };
   }, []);
 
   return (
-    <section ref={sectionRef} id="overview" className="overflow-hidden" style={{ background: "var(--bg-base)" }}>
-      <div ref={containerRef} className="flex will-change-transform" style={{ width: "300vw" }}>
+    <section ref={sectionRef} id="overview" style={{ background: "var(--bg-base)" }}>
+      {/* Desktop: horizontal scroll (300vw flex) */}
+      <div ref={containerRef} className="hidden md:flex will-change-transform overflow-hidden" style={{ width: "300vw" }}>
         <Panel1 />
         <Panel2 />
         <Panel3 />
+      </div>
+
+      {/* Mobile: only Panel 1 */}
+      <div className="flex md:hidden flex-col">
+        <Panel1 />
       </div>
     </section>
   );

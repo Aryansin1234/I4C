@@ -3,16 +3,16 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
 const SECTIONS: Record<string, { r: number; g: number; b: number; label: string }> = {
-  hero:      { r:   0, g: 102, b: 255, label: "Hello"      },
-  overview:  { r:   0, g: 170, b: 255, label: "Exploring"  },
-  timeline:  { r:   0, g: 204, b: 102, label: "Planning"   },
-  problems:  { r: 255, g: 140, b:   0, label: "Thinking"   },
-  partners:  { r: 170, g:  68, b: 255, label: "Connecting" },
-  criteria:  { r: 255, g:  68, b: 136, label: "Evaluating" },
-  prizes:    { r: 255, g: 204, b:   0, label: "Winning"    },
-  learnings: { r:   0, g: 220, b: 170, label: "Growing"    },
-  register:  { r:   0, g: 102, b: 255, label: "Ready?"     },
-  footer:    { r:  85, g:  85, b: 119, label: "See you"    },
+  hero:      { r:   0, g: 102, b: 255, label: "Hello"         },
+  overview:  { r:   0, g: 170, b: 255, label: "What is I4C"   },
+  timeline:  { r:   0, g: 204, b: 102, label: "5 Weeks"       },
+  problems:  { r: 255, g: 140, b:   0, label: "10 Challenges" },
+  partners:  { r: 170, g:  68, b: 255, label: "3 Partners"    },
+  prizes:    { r: 255, g: 204, b:   0, label: "Win Big"        },
+  criteria:  { r: 255, g:  68, b: 136, label: "5 Criteria"    },
+  learnings: { r:   0, g: 220, b: 170, label: "You Gain"      },
+  register:  { r:   0, g: 102, b: 255, label: "Join Now"      },
+  footer:    { r:  85, g:  85, b: 119, label: "See You"       },
 };
 
 function rgba(r: number, g: number, b: number, a: number) {
@@ -32,7 +32,7 @@ export default function AIOrb() {
     ring1: number; ring2: number; ring3: number; noiseT: number;
     trail: Array<{ x: number; y: number; a: number }>;
     ripples: Array<{ r: number; maxR: number; a: number }>;
-    label: string; labelAlpha: number;
+    label: string; labelAlpha: number; labelTimer: number;
   }>({
     sx: -400, sy: -400, vx: 0, vy: 0, mx: -400, my: -400,
     cr: 0, cg: 102, cb: 255, tr: 0, tg: 102, tb: 255,
@@ -42,7 +42,7 @@ export default function AIOrb() {
     ring1: 0, ring2: 0, ring3: 0, noiseT: 0,
     trail: [],
     ripples: [],
-    label: "Hello", labelAlpha: 0,
+    label: "Hello", labelAlpha: 0, labelTimer: 0,
   });
 
   const onSection = useCallback((id: string) => {
@@ -52,6 +52,7 @@ export default function AIOrb() {
     c.tr = s.r; c.tg = s.g; c.tb = s.b;
     c.label = s.label;
     c.labelAlpha = 1;
+    c.labelTimer = 0;
   }, []);
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function AIOrb() {
     const ids = Object.keys(SECTIONS);
     const obs = new IntersectionObserver(
       (entries) => entries.forEach(e => { if (e.isIntersecting) onSection(e.target.id); }),
-      { threshold: 0.3 }
+      { threshold: 0.15 }
     );
     ids.forEach(id => { const el = document.getElementById(id); if (el) obs.observe(el); });
     return () => obs.disconnect();
@@ -86,7 +87,17 @@ export default function AIOrb() {
     const onMove = (e: MouseEvent) => {
       c.mx = e.clientX; c.my = e.clientY;
       c.idle = false; c.idleTimer = 0;
-      if (!c.visible) { c.visible = true; c.sx = e.clientX; c.sy = e.clientY; }
+      if (!c.visible) {
+        c.visible = true;
+        c.sx = e.clientX;
+        c.sy = e.clientY;
+        // Show "Hello" on first appearance if no section has triggered yet
+        if (c.labelAlpha === 0) {
+          c.label = "Hello";
+          c.labelAlpha = 1;
+          c.labelTimer = 0;
+        }
+      }
     };
     const onDown = () => {
       c.clicking = true;
@@ -112,7 +123,6 @@ export default function AIOrb() {
     window.addEventListener("mousedown", onDown);
     window.addEventListener("mouseup",   onUp);
 
-    // simple 2D noise helper
     const noise = (x: number, y: number, t: number) => {
       return Math.sin(x * 2.3 + t) * Math.cos(y * 1.7 + t * 0.8) * 0.5 +
              Math.sin(x * 1.1 - t * 1.3) * Math.cos(y * 2.9 + t * 0.6) * 0.5;
@@ -173,8 +183,13 @@ export default function AIOrb() {
       c.ring3 += 0.009;
       c.noiseT += 0.022;
 
-      // label fade
-      if (c.labelAlpha > 0) c.labelAlpha = Math.max(0, c.labelAlpha - 0.007);
+      // label — hold for ~4s (240 frames) then fade
+      if (c.labelAlpha > 0) {
+        c.labelTimer++;
+        if (c.labelTimer > 240) {
+          c.labelAlpha = Math.max(0, c.labelAlpha - 0.012);
+        }
+      }
 
       // trail
       if (!Array.isArray(c.trail)) c.trail = [];
@@ -185,7 +200,7 @@ export default function AIOrb() {
 
       /* ── DRAW ── */
 
-      // 1. Trail — tapered segments with glow
+      // 1. Trail
       c.trail.forEach((p, i) => {
         const pct  = i / c.trail.length;
         const tAlpha = pct * 0.12;
@@ -202,7 +217,6 @@ export default function AIOrb() {
 
       // 2. Click ripples
       if (!Array.isArray(c.ripples)) c.ripples = [];
-      if (!Array.isArray(c.trail))   c.trail   = [];
       c.ripples = c.ripples.filter(rip => rip.a > 0.01);
       c.ripples.forEach(rip => {
         rip.r  += 2.5;
@@ -212,7 +226,6 @@ export default function AIOrb() {
         ctx.strokeStyle = rgba(R, G, B, rip.a * 0.6);
         ctx.lineWidth   = 1.5;
         ctx.stroke();
-        // second ripple — slightly offset
         ctx.beginPath();
         ctx.arc(cx, cy, rip.r * 0.7, 0, Math.PI * 2);
         ctx.strokeStyle = rgba(R, G, B, rip.a * 0.3);
@@ -247,7 +260,6 @@ export default function AIOrb() {
           ctx.arc(0, 0, ringR, a0, a1);
           ctx.stroke();
         }
-        // small node dots on ring
         for (let s = 0; s < segs; s++) {
           const a = (s / segs) * Math.PI * 2;
           ctx.beginPath();
@@ -309,7 +321,6 @@ export default function AIOrb() {
       ctx.scale(c.stretchX, c.stretchY);
       ctx.rotate(-c.angle);
 
-      // plasma glow halo
       const plasmaR = baseR * 1.1;
       const plasma  = ctx.createRadialGradient(0, 0, 0, 0, 0, plasmaR * 1.6);
       plasma.addColorStop(0,    rgba(R, G, B, 0.5));
@@ -320,7 +331,6 @@ export default function AIOrb() {
       ctx.fillStyle = plasma;
       ctx.fill();
 
-      // noisy core boundary — draw as polygon of perturbed points
       ctx.beginPath();
       const pts = 48;
       for (let p = 0; p <= pts; p++) {
@@ -335,7 +345,6 @@ export default function AIOrb() {
       }
       ctx.closePath();
 
-      // core fill — radial gradient
       const coreFill = ctx.createRadialGradient(
         -baseR * 0.25, -baseR * 0.28, 0,
         0, 0, baseR * 1.05
@@ -348,13 +357,11 @@ export default function AIOrb() {
       ctx.fillStyle = coreFill;
       ctx.fill();
 
-      // specular highlight
       ctx.beginPath();
       ctx.ellipse(-baseR * 0.28, -baseR * 0.3, baseR * 0.28, baseR * 0.18, -0.5, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255,255,255,${alpha * 0.55})`;
       ctx.fill();
 
-      // secondary micro-highlight
       ctx.beginPath();
       ctx.ellipse(baseR * 0.18, baseR * 0.22, baseR * 0.1, baseR * 0.07, 0.8, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255,255,255,${alpha * 0.2})`;
@@ -371,7 +378,6 @@ export default function AIOrb() {
         const lx   = cx + baseR * 2.8 + 6;
         const ly   = cy + 4.5;
 
-        // background pill
         const tw = ctx.measureText(text).width;
         const ph = 18, pw = tw + 14, pr = 5;
         const px2 = lx - 6, py2 = ly - 13;
@@ -385,7 +391,6 @@ export default function AIOrb() {
         ctx.lineWidth   = 0.8;
         ctx.stroke();
 
-        // text
         ctx.fillStyle = isDark
           ? `rgba(255,255,255,${c.labelAlpha})`
           : `rgba(0,0,0,${c.labelAlpha})`;

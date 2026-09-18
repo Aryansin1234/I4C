@@ -69,7 +69,7 @@ function BenefitCard({ card, index }: { card: typeof BENEFITS[0]; index: number 
         duration: 0.7,
         ease:     [0.16, 1, 0.3, 1],
       }}
-      viewport={{ once: false, margin: "-60px" }}
+      viewport={{ once: false, margin: "0px 0px -150px 0px" }}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
       data-cursor-hover
@@ -122,7 +122,7 @@ export default function BenefitsSection() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          viewport={{ once: false }}
+          viewport={{ once: false, margin: "0px 0px -150px 0px" }}
         >
           <span
             className="text-xs font-mono tracking-[0.2em] uppercase mb-4 block"

@@ -9,7 +9,7 @@ const EXPO = [0.76, 0, 0.24, 1] as const;
 /* ─── CTA Section ────────────────────────────────────────────── */
 export default function CTASection() {
   const sectionRef = useRef<HTMLElement>(null);
-  const inView     = useInView(sectionRef, { once: false, amount: 0.25 });
+  const inView     = useInView(sectionRef, { once: false, amount: 0.25, margin: "0px 0px -150px 0px" });
 
   return (
     <section
@@ -18,7 +18,30 @@ export default function CTASection() {
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
       style={{ background: "var(--bg-base)" }}
     >
-      {/* Particle field */}
+      {/* Kinetic rings — expand from center */}
+      {[0, 1, 2, 3].map((ri) => (
+        <motion.div
+          key={ri}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            border: "1px solid rgba(0,102,255,0.12)",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+          animate={{
+            width:   [`${200 + ri * 160}px`, `${320 + ri * 160}px`, `${200 + ri * 160}px`],
+            height:  [`${200 + ri * 160}px`, `${320 + ri * 160}px`, `${200 + ri * 160}px`],
+            opacity: [0.06, 0.18, 0.06],
+          }}
+          transition={{
+            duration: 4 + ri * 1.2,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: ri * 0.8,
+          }}
+        />
+      ))}
 
       {/* Dot grid overlay */}
       <div
@@ -83,7 +106,7 @@ export default function CTASection() {
           animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 12 }}
           transition={{ delay: 0.4, duration: 0.7, ease: SOFT }}
         >
-          Registration closes <strong style={{ color: "var(--text-primary)" }}>November 1st</strong>.
+          Registration closes <strong style={{ color: "var(--amber-accent)" }}>November 1st</strong>.
           Teams of 2–4. 48 hours to change everything.
         </motion.p>
 

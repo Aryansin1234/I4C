@@ -272,8 +272,8 @@ function TierCard({ t, inView, i }: { t: typeof TIERS[number]; inView: boolean; 
 export default function PrizesSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef  = useRef<HTMLDivElement>(null);
-  const inView     = useInView(sectionRef, { once: false, amount: 0.2 });
-  const headerView = useInView(headerRef,  { once: false, amount: 0.4 });
+  const inView     = useInView(sectionRef, { once: false, amount: 0.2, margin: "0px 0px -150px 0px" });
+  const headerView = useInView(headerRef, { once: false, amount: 0.4, margin: "0px 0px -150px 0px" });
 
   // Sort visually: 2nd, 1st, 3rd (podium order)
   const podiumOrder = [TIERS[1], TIERS[0], TIERS[2]]; // second, first, third
@@ -335,15 +335,112 @@ export default function PrizesSection() {
           </div>
         </div>
 
-        {/* Podium — 2nd | 1st | 3rd */}
-        <div className="flex items-end justify-center gap-4 mb-16">
+        {/* ── DESKTOP podium — hidden on mobile ── */}
+        <div className="hidden md:flex items-end justify-center gap-4 mb-16">
           {podiumOrder.map((t, i) => (
             <TierCard key={t.rank} t={t} inView={inView} i={i} />
           ))}
         </div>
 
-        {/* Special awards */}
+        {/* ── MOBILE layout ── */}
+        <div className="md:hidden mb-10">
+          {/* Winner — full width */}
+          {[TIERS.find(t => t.rank === "01")!].map((t, i) => (
+            <motion.div
+              key={t.rank}
+              className="relative rounded-2xl overflow-hidden mb-3"
+              style={{
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border-accent)",
+                boxShadow: "0 8px 40px rgba(0,102,255,0.14)",
+              }}
+              initial={{ opacity: 0, y: 32 }}
+              animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 32 }}
+              transition={{ duration: 0.7, ease: SOFT, delay: 0.1 }}
+            >
+              {/* Ambient glow */}
+              <motion.div className="absolute inset-0 pointer-events-none"
+                animate={{ opacity: [0.4, 0.7, 0.4] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(0,102,255,0.12) 0%, transparent 65%)" }} />
+              {/* Bottom accent */}
+              <motion.div className="absolute bottom-0 left-0 right-0 h-[2px]"
+                style={{ background: "linear-gradient(90deg, var(--brand-accent), transparent)", transformOrigin: "left" }}
+                initial={{ scaleX: 0 }} animate={{ scaleX: inView ? 1 : 0 }}
+                transition={{ delay: 0.4, duration: 1.0, ease: EXPO }} />
+              <div className="relative z-10 p-5 flex items-center justify-between gap-4">
+                <div>
+                  <span className="text-[9px] font-mono tracking-[0.26em] uppercase block mb-1" style={{ color: "var(--brand-accent)" }}>First Place</span>
+                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>Best overall solution</span>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <div className="font-display font-bold leading-none"
+                    style={{ fontSize: "2.6rem", letterSpacing: "-0.05em", color: "var(--brand-accent)", filter: "drop-shadow(0 0 16px var(--accent-glow))" }}>
+                    <Counter to={t.amount} trigger={inView} delay={0.3} />
+                  </div>
+                  <div className="text-[9px] font-mono tracking-widest uppercase mt-0.5" style={{ color: "var(--text-muted)" }}>cash prize</div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+
+          {/* 2nd + 3rd — side by side */}
+          <div className="grid grid-cols-2 gap-3">
+            {[TIERS.find(t => t.rank === "02")!, TIERS.find(t => t.rank === "03")!].map((t, i) => (
+              <motion.div
+                key={t.rank}
+                className="relative rounded-2xl overflow-hidden"
+                style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)" }}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 24 }}
+                transition={{ duration: 0.6, ease: SOFT, delay: 0.2 + i * 0.1 }}
+              >
+                <div className="p-4">
+                  <span className="text-[9px] font-mono tracking-[0.22em] uppercase block mb-0.5"
+                    style={{ color: "var(--text-muted)" }}>{t.place}</span>
+                  <div className="font-display font-bold leading-none"
+                    style={{ fontSize: "1.8rem", letterSpacing: "-0.05em", color: "var(--text-primary)" }}>
+                    <Counter to={t.amount} trigger={inView} delay={0.35 + i * 0.1} />
+                  </div>
+                  <div className="text-[9px] font-mono tracking-widest uppercase mt-1"
+                    style={{ color: "var(--text-muted)" }}>{t.label}</div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Special awards — vertical list */}
+          <motion.div
+            className="mt-6"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 12 }}
+            transition={{ delay: 0.45, duration: 0.6, ease: SOFT }}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-[10px] font-mono tracking-[0.24em] uppercase" style={{ color: "var(--text-muted)" }}>Special awards</span>
+              <div className="h-px flex-1" style={{ background: "var(--border-color)" }} />
+            </div>
+            <div className="flex flex-col gap-2">
+              {SPECIALS.map((s, si) => (
+                <div key={s.label} className="flex items-center gap-3 px-4 py-3 rounded-xl"
+                  style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)" }}>
+                  <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ color: "var(--brand-accent)", background: "var(--accent-subtle)", border: "1px solid var(--border-accent)" }}>
+                    {s.icon}
+                  </span>
+                  <span className="text-sm font-semibold flex-1" style={{ color: "var(--text-primary)" }}>{s.label}</span>
+                  <span className="font-display font-bold" style={{ fontSize: "1.1rem", letterSpacing: "-0.03em", color: "var(--brand-accent)" }}>
+                    ${s.amount.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* ── Desktop special awards ── */}
         <motion.div
+          className="hidden md:block"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 16 }}
           transition={{ delay: 0.55, duration: 0.6, ease: SOFT }}

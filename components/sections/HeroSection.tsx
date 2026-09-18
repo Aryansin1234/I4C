@@ -1,18 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import dynamic from "next/dynamic";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import DotGrid from "@/components/sections/DotGrid";
 
-// Mascot is client-only (uses pointer events API)
-const Mascot = dynamic(
-  () => import("page-mascot").then(m => m.Mascot),
-  { ssr: false }
-);
-
 const SOFT = [0.16, 1, 0.3, 1] as const;
-const BASE = process.env.NODE_ENV === "production" ? "/I4C" : "";
 
 const WORDS = [
   "design.",
@@ -41,29 +33,9 @@ function wordHue(i: number) {
 
 const INTERVAL_MS  = 2000;
 
-/* ── Stat pill ───────────────────────────────────────────────── */
-function StatPill({ value, label }: { value: string; label: string }) {
-  return (
-    <motion.div
-      className="flex flex-col items-start px-4 py-2.5 rounded-xl"
-      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)" }}
-      whileHover={{ borderColor: "var(--border-accent)", boxShadow: "0 0 20px var(--accent-glow)", y: -2 }}
-      data-cursor-hover
-    >
-      <span className="font-display font-bold leading-none"
-        style={{ fontSize: "clamp(1rem,1.6vw,1.4rem)", letterSpacing: "-0.04em", color: "var(--brand-accent)" }}>
-        {value}
-      </span>
-      <span className="text-[9px] font-mono tracking-widest uppercase mt-1" style={{ color: "var(--text-muted)" }}>
-        {label}
-      </span>
-    </motion.div>
-  );
-}
-
 function RevealWord({ children, delay, color }: { children: string; delay: number; color?: string }) {
   return (
-    <span style={{ display: "inline-block", overflow: "visible", verticalAlign: "bottom", paddingBottom: "0.05em" }}>
+    <span style={{ display: "inline-block", overflow: "hidden", verticalAlign: "bottom", paddingBottom: "0.08em", paddingRight: "0.06em" }}>
       <motion.span
         style={{ display: "inline-block", color: color ?? "var(--text-primary)" }}
         initial={{ y: "105%", opacity: 0 }}
@@ -82,9 +54,16 @@ function RevealWord({ children, delay, color }: { children: string; delay: numbe
 export default function HeroSection() {
   const [show,      setShow]      = useState(false);
   const [tick,      setTick]      = useState(0);
-  const [rightMode, setRightMode] = useState<"words" | "mascot">("words");
-  const [mascotChar, setMascotChar] = useState<"droid" | "robot" | "gearbot">("droid");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sectionRef  = useRef<HTMLElement>(null);
+
+  // Mouse parallax for dot grid
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+  const smoothX = useSpring(mouseX, { stiffness: 60, damping: 20 });
+  const smoothY = useSpring(mouseY, { stiffness: 60, damping: 20 });
+  const dotX = useTransform(smoothX, [0, 1], ["-12px", "12px"]);
+  const dotY = useTransform(smoothY, [0, 1], ["-12px", "12px"]);
 
   const activeIdx = tick % WORDS.length;
 
@@ -96,8 +75,13 @@ export default function HeroSection() {
   const effectiveTick = tick % (COPIES * WORDS.length);
 
   useEffect(() => {
-    const t = setTimeout(() => setShow(true), 100);
-    return () => clearTimeout(t);
+    // Wait for loading screen to finish, then play entry
+    const onLoaded = () => {
+      // Small delay so the curtain fully clears before animating
+      setTimeout(() => setShow(true), 120);
+    };
+    window.addEventListener("app-loaded", onLoaded);
+    return () => window.removeEventListener("app-loaded", onLoaded);
   }, []);
 
   useEffect(() => {
@@ -107,6 +91,16 @@ export default function HeroSection() {
     }, INTERVAL_MS);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [show]);
+
+  // Track mouse for dot grid parallax
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX / window.innerWidth);
+      mouseY.set(e.clientY / window.innerHeight);
+    };
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, [mouseX, mouseY]);
 
   function smoothNav(href: string) {
     const target = document.querySelector(href);
@@ -121,16 +115,42 @@ export default function HeroSection() {
 
   return (
     <section
+      ref={sectionRef}
       id="hero"
       className="relative min-h-screen flex flex-col"
-      style={{ background: "var(--bg-base)", paddingTop: "80px" }}
+      style={{ background: "var(--bg-base)", paddingTop: "80px", overflow: "hidden" }}
     >
-      {/* ambient dot grid — full hero, behind all content */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+      {/* DotGrid — fades in with section */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        style={{ zIndex: 0, x: dotX, y: dotY }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: show ? 1 : 0 }}
+        transition={{ duration: 1.2, ease: SOFT }}
+      >
         <DotGrid />
-      </div>
+      </motion.div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-80px)] relative" style={{ zIndex: 1 }}>
+      {/* Radial glow — fades in */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          zIndex: 0,
+          background: "radial-gradient(ellipse 55% 45% at 20% 50%, rgba(0,102,255,0.07) 0%, transparent 70%)",
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: show ? 1 : 0 }}
+        transition={{ duration: 1.4, ease: SOFT, delay: 0.1 }}
+      />
+
+      {/* Main content — rises up as a unit */}
+      <motion.div
+        className="flex-1 grid grid-cols-1 lg:grid-cols-2 min-h-[calc(100vh-80px)] relative"
+        style={{ zIndex: 1 }}
+        initial={{ opacity: 0, y: 32 }}
+        animate={{ opacity: show ? 1 : 0, y: show ? 0 : 32 }}
+        transition={{ duration: 0.9, ease: SOFT, delay: 0.05 }}
+      >
 
         {/* ── LEFT ── */}
         <div className="flex flex-col justify-center px-8 md:px-14 lg:px-16 xl:px-20 py-16">
@@ -153,9 +173,14 @@ export default function HeroSection() {
             </span>
           </motion.div>
 
+          {/* Headline */}
           <div
-            className="font-display font-bold mb-6 leading-[1]"
-            style={{ fontSize: "clamp(3.8rem, 8vw, 9.5rem)", letterSpacing: "-0.05em" }}
+            className="font-display font-bold mb-6"
+            style={{
+              fontSize: "clamp(3.5rem, 7.5vw, 9rem)",
+              letterSpacing: "-0.05em",
+              lineHeight: 1.05,
+            }}
           >
             {show && (
               <>
@@ -163,8 +188,24 @@ export default function HeroSection() {
                   <RevealWord delay={0.1}>Invent</RevealWord>
                   <RevealWord delay={0.22}>for</RevealWord>
                 </div>
-                <div>
-                  <RevealWord delay={0.36} color="var(--brand-accent)">Customers</RevealWord>
+                <div style={{ overflow: "hidden", paddingBottom: "0.08em" }}>
+                  <motion.span
+                    style={{
+                      display: "inline-block",
+                      background: "linear-gradient(135deg, #0066FF 0%, #33AAFF 50%, #0066FF 100%)",
+                      backgroundSize: "200% auto",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                      animation: "gradientShift 4s linear infinite",
+                      paddingRight: "0.08em",
+                    }}
+                    initial={{ y: "105%", opacity: 0 }}
+                    animate={{ y: "0%", opacity: 1 }}
+                    transition={{ duration: 0.85, ease: SOFT, delay: 0.36 }}
+                  >
+                    Customers
+                  </motion.span>
                 </div>
               </>
             )}
@@ -224,102 +265,37 @@ export default function HeroSection() {
             </motion.button>
           </motion.div>
 
+          {/* Registration deadline in amber */}
           <motion.div
-            className="grid grid-cols-2 gap-2.5 max-w-[16rem]"
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: show ? 1 : 0, y: show ? 0 : 14 }}
-            transition={{ duration: 0.7, ease: SOFT, delay: 0.94 }}
+            className="flex items-center gap-2 mt-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: show ? 1 : 0, y: show ? 0 : 10 }}
+            transition={{ duration: 0.6, ease: SOFT, delay: 0.94 }}
           >
-            <StatPill value="48h"  label="Build sprint" />
-            <StatPill value="20+"  label="Teams"        />
-            <StatPill value="$18K" label="Prize pool"   />
-            <StatPill value="3"    label="Partners"     />
+            <motion.span
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+              style={{ background: "var(--amber-accent)" }}
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+            <span className="text-[11px] font-mono tracking-[0.18em] uppercase" style={{ color: "var(--amber-accent)" }}>
+              Registration closes Nov 1
+            </span>
           </motion.div>
         </div>
 
-        {/* ── RIGHT — toggle: word cycler vs mascot ── */}
+        {/* ── RIGHT — word cycler ── */}
         <div className="hidden lg:flex flex-col justify-center items-end px-8 xl:px-16 relative">
-
-          {/* ── toggle button ── */}
           <motion.div
-            className="absolute top-6 right-0 flex items-center gap-1 rounded-xl p-1 z-10"
-            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-color)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: show ? 1 : 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            {/* words button */}
-            <button
-              onClick={() => setRightMode("words")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono tracking-wide transition-all"
-              style={{
-                background: rightMode === "words" ? "var(--brand-accent)" : "transparent",
-                color:      rightMode === "words" ? "#fff" : "var(--text-muted)",
-              }}
-              data-cursor-hover
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 6h16M4 12h8M4 18h12"/>
-              </svg>
-              Words
-            </button>
-            {/* mascot button */}
-            <button
-              onClick={() => setRightMode("mascot")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono tracking-wide transition-all"
-              style={{
-                background: rightMode === "mascot" ? "var(--brand-accent)" : "transparent",
-                color:      rightMode === "mascot" ? "#fff" : "var(--text-muted)",
-              }}
-              data-cursor-hover
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="9" r="2"/><path d="M8 15s1 2 4 2 4-2 4-2"/>
-              </svg>
-              Mascot
-            </button>
-          </motion.div>
-
-          {/* ── mascot character picker (shown when mascot mode) ── */}
-          {rightMode === "mascot" && (
-            <motion.div
-              className="absolute top-14 right-0 flex gap-1 z-10"
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              {(["droid", "robot", "gearbot"] as const).map(c => (
-                <button
-                  key={c}
-                  onClick={() => setMascotChar(c)}
-                  className="px-2.5 py-1 rounded-lg text-[10px] font-mono tracking-widest uppercase transition-all"
-                  style={{
-                    background: mascotChar === c ? "var(--accent-subtle)" : "var(--bg-surface)",
-                    border:     `1px solid ${mascotChar === c ? "var(--border-accent)" : "var(--border-color)"}`,
-                    color:      mascotChar === c ? "var(--brand-accent)" : "var(--text-muted)",
-                  }}
-                  data-cursor-hover
-                >
-                  {c}
-                </button>
-              ))}
-            </motion.div>
-          )}
-
-          {/* ── WORD CYCLER ── */}
-          <motion.div
-            animate={{ opacity: rightMode === "words" ? 1 : 0, pointerEvents: rightMode === "words" ? "auto" : "none" }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
             style={{
               fontSize:   WORD_FONT,
               display:    "flex",
               alignItems: "center",
               height:     "calc(7 * 1.5em)",
               gap:        "0.25em",
-              position:   "absolute",
-              inset:      0,
-              paddingLeft: "2rem",
-              paddingRight: "2rem",
             }}
           >
             <span
@@ -386,27 +362,28 @@ export default function HeroSection() {
               </div>
             </div>
           </motion.div>
-
-          {/* ── MASCOT ── */}
-          <motion.div
-            className="flex items-center justify-center"
-            animate={{ opacity: rightMode === "mascot" ? 1 : 0, pointerEvents: rightMode === "mascot" ? "auto" : "none" }}
-            transition={{ duration: 0.3 }}
-            style={{ position: "absolute", inset: 0, paddingBottom: "40px" }}
-          >
-            {show && rightMode === "mascot" && (
-              <Mascot
-                directions={`${BASE}/mascots/${mascotChar}-directions.png`}
-                reactions={`${BASE}/mascots/${mascotChar}-reactions.png`}
-                size={220}
-                label={`${mascotChar} mascot`}
-              />
-            )}
-          </motion.div>
-
         </div>
 
-      </div>
+      </motion.div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        style={{ zIndex: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: show ? 1 : 0 }}
+        transition={{ delay: 1.5, duration: 0.8 }}
+      >
+        <span className="text-[9px] font-mono tracking-[0.28em] uppercase" style={{ color: "var(--text-muted)" }}>
+          Scroll
+        </span>
+        <motion.div
+          className="w-px h-8 origin-top"
+          style={{ background: "linear-gradient(to bottom, var(--border-accent), transparent)" }}
+          animate={{ scaleY: [0, 1, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.3 }}
+        />
+      </motion.div>
     </section>
   );
 }

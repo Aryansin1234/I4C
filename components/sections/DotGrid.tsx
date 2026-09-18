@@ -121,10 +121,17 @@ export default function DotGrid() {
     window.addEventListener("mousemove", onWindowMove);
     raf = requestAnimationFrame(tick);
 
+    // Re-init when canvas becomes visible (parent was display:none on mount)
+    const ro = new ResizeObserver(() => {
+      if (canvas.offsetWidth > 0 && canvas.offsetHeight > 0) resize();
+    });
+    ro.observe(canvas);
+
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize",    resize);
       window.removeEventListener("mousemove", onWindowMove);
+      ro.disconnect();
     };
   }, []);
 

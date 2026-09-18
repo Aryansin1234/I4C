@@ -91,10 +91,11 @@ const GAINS = [
   },
 ];
 
-/* ─── Single editorial row ───────────────────────────────────── */
+
+/* ─── Single editorial row (desktop) ────────────────────────── */
 function GainRow({ g, i }: { g: typeof GAINS[0]; i: number }) {
   const ref     = useRef<HTMLDivElement>(null);
-  const inView  = useInView(ref, { once: false, amount: 0.4 });
+  const inView  = useInView(ref, { once: false, amount: 0.4, margin: "0px 0px -150px 0px" });
   const [hov, setHov] = useState(false);
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
@@ -114,20 +115,19 @@ function GainRow({ g, i }: { g: typeof GAINS[0]; i: number }) {
 
       {/* Row */}
       <motion.div
-        className="grid items-center py-8 gap-6"
+        className="grid items-center py-6 lg:py-8 gap-4 lg:gap-6"
         style={{
-          gridTemplateColumns: "4rem 1fr 1fr auto",
+          gridTemplateColumns: "3rem 1fr auto",
           cursor: "default",
         }}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
       >
-
-        {/* ── Col 1: large number ── */}
+        {/* ── Col 1: number ── */}
         <motion.span
           className="font-display font-bold leading-none select-none tabular-nums"
           style={{
-            fontSize: "clamp(1.8rem, 3vw, 2.6rem)",
+            fontSize: "clamp(1.2rem, 2.5vw, 2.6rem)",
             letterSpacing: "-0.05em",
             y: numY,
             color: hov ? "var(--brand-accent)" : "var(--text-muted)",
@@ -137,66 +137,63 @@ function GainRow({ g, i }: { g: typeof GAINS[0]; i: number }) {
           {g.num}
         </motion.span>
 
-        {/* ── Col 2: title ── */}
-        <div style={{ overflow: "hidden" }}>
-          <motion.h3
-            className="font-display font-bold"
-            style={{
-              fontSize: "clamp(1.6rem, 3.2vw, 3rem)",
-              letterSpacing: "-0.04em",
-              lineHeight: 1.0,
-              whiteSpace: "pre-line",
-              color: hov ? "var(--text-primary)" : "var(--text-secondary)",
-              transition: "color 0.25s",
-            }}
-            initial={{ y: "105%" }}
-            animate={{ y: inView ? "0%" : "105%" }}
-            transition={{ delay: 0.05 + i * 0.04, duration: 0.85, ease: SOFT }}
+        {/* ── Col 2: title + body ── */}
+        <div>
+          <div style={{ overflow: "hidden" }}>
+            <motion.h3
+              className="font-display font-bold"
+              style={{
+                fontSize: "clamp(1.1rem, 3.2vw, 3rem)",
+                letterSpacing: "-0.04em",
+                lineHeight: 1.0,
+                whiteSpace: "pre-line",
+                color: hov ? "var(--text-primary)" : "var(--text-secondary)",
+                transition: "color 0.25s",
+              }}
+              initial={{ y: "105%" }}
+              animate={{ y: inView ? "0%" : "105%" }}
+              transition={{ delay: 0.05 + i * 0.04, duration: 0.85, ease: SOFT }}
+            >
+              {g.title}
+            </motion.h3>
+          </div>
+          <motion.p
+            className="text-xs lg:text-sm leading-relaxed mt-1.5 lg:mt-2 max-w-sm"
+            style={{ color: "var(--text-muted)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: inView ? 1 : 0 }}
+            transition={{ delay: 0.2 + i * 0.04, duration: 0.6 }}
           >
-            {g.title}
-          </motion.h3>
+            {g.body}
+          </motion.p>
         </div>
 
-        {/* ── Col 3: body ── */}
-        <motion.p
-          className="text-sm leading-relaxed max-w-sm hidden md:block"
-          style={{ color: "var(--text-muted)" }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: inView ? 1 : 0 }}
-          transition={{ delay: 0.2 + i * 0.04, duration: 0.6 }}
-        >
-          {g.body}
-        </motion.p>
-
-        {/* ── Col 4: stat + icon ── */}
+        {/* ── Col 3: stat + icon ── */}
         <motion.div
           className="flex flex-col items-end gap-1"
           initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: inView ? 1 : 0, x: inView ? 0 : 16 }}
           transition={{ delay: 0.15 + i * 0.04, duration: 0.6, ease: SOFT }}
         >
-          <div className="flex items-center gap-3">
-            {/* Icon pill */}
+          <div className="flex items-center gap-2 lg:gap-3">
             <motion.div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              className="w-8 h-8 lg:w-9 lg:h-9 rounded-xl flex items-center justify-center"
               style={{
                 background: hov ? "var(--accent-subtle)" : "var(--bg-surface)",
                 border: `1px solid ${hov ? "var(--border-accent)" : "var(--border-color)"}`,
                 color: hov ? "var(--brand-accent)" : "var(--text-muted)",
                 transition: "all 0.25s",
               }}
-              animate={{ rotate: hov ? 8 : 0, scale: hov ? 1.1 : 1 }}
+              animate={{ rotate: hov ? 15 : 0, scale: hov ? 1.15 : 1 }}
               transition={{ duration: 0.2 }}
             >
               {g.icon}
             </motion.div>
-
-            {/* Stat */}
             <div className="text-right">
               <div
                 className="font-display font-bold leading-none tabular-nums"
                 style={{
-                  fontSize: "clamp(1.2rem, 2vw, 1.8rem)",
+                  fontSize: "clamp(1rem, 2vw, 1.8rem)",
                   letterSpacing: "-0.04em",
                   color: hov ? "var(--brand-accent)" : "var(--text-primary)",
                   filter: hov ? "drop-shadow(0 0 10px var(--accent-glow))" : "none",
@@ -205,7 +202,7 @@ function GainRow({ g, i }: { g: typeof GAINS[0]; i: number }) {
               >
                 {g.stat}
               </div>
-              <div className="text-[10px] font-mono tracking-widest uppercase" style={{ color: "var(--text-muted)" }}>
+              <div className="text-[9px] font-mono tracking-widest uppercase" style={{ color: "var(--text-muted)" }}>
                 {g.statLabel}
               </div>
             </div>
@@ -219,7 +216,7 @@ function GainRow({ g, i }: { g: typeof GAINS[0]; i: number }) {
 /* ─── Section ────────────────────────────────────────────────── */
 export default function LearningsSection() {
   const headerRef  = useRef<HTMLDivElement>(null);
-  const inView     = useInView(headerRef, { once: false, amount: 0.4 });
+  const inView     = useInView(headerRef, { once: false, amount: 0.3, margin: "0px 0px -150px 0px" });
 
   return (
     <section id="learnings" className="py-28 lg:py-36" style={{ background: "var(--bg-base)" }}>
@@ -280,18 +277,17 @@ export default function LearningsSection() {
           </motion.a>
         </div>
 
-        {/* ── Editorial rows ── */}
+        {/* ── Rows ── */}
         <div>
           {GAINS.map((g, i) => (
             <GainRow key={g.id} g={g} i={i} />
           ))}
-          {/* Final bottom rule */}
           <motion.div
             className="h-px"
             style={{ transformOrigin: "left", background: "var(--border-color)" }}
             initial={{ scaleX: 0 }}
             whileInView={{ scaleX: 1 }}
-            viewport={{ once: false }}
+            viewport={{ once: false, margin: "0px 0px -150px 0px" }}
             transition={{ duration: 0.75, ease: EXPO }}
           />
         </div>

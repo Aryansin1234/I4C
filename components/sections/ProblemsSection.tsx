@@ -434,23 +434,208 @@ function StairItem({
   );
 }
 
-/* ─── Section ────────────────────────────────────────────────── */
-export default function ProblemsSection() {
-  const [active, setActive] = useState<Problem>(PROBLEMS[0]);
-  const sectionRef  = useRef<HTMLDivElement>(null);
-  const listRef     = useRef<HTMLDivElement>(null);
-  // sectionRef for header + right panel (enters early)
-  const inView      = useInView(sectionRef, { once: false, amount: 0.1 });
-  // listRef for stair items — fires when list itself is well in view
-  const listInView  = useInView(listRef, { once: false, amount: 0.3, margin: "0px 0px -80px 0px" });
+
+/* ─── Mobile swipe carousel ─────────────────────────────────── */
+function MobileCarousel({ problems }: { problems: Problem[] }) {
+  const [index, setIndex]     = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef(0);
+  const dragDelta = useRef(0);
+
+  const total = problems.length;
+  const p     = problems[index] || problems[0];
+
+  const goTo = (i: number) => {
+    setIndex(Math.max(0, Math.min(total - 1, i)));
+  };
+
+  // Touch handlers for swipe
+  const onTouchStart = (e: React.TouchEvent) => {
+    dragStart.current = e.touches[0].clientX;
+    dragDelta.current = 0;
+    setDragging(true);
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    dragDelta.current = e.touches[0].clientX - dragStart.current;
+  };
+  const onTouchEnd = () => {
+    setDragging(false);
+    if (dragDelta.current < -50) goTo(index + 1);
+    else if (dragDelta.current > 50) goTo(index - 1);
+    dragDelta.current = 0;
+  };
+
+  if (!p) return null;
 
   return (
-    <section id="problems" className="py-28 lg:py-36" style={{ background: "var(--bg-base)" }}>
+    <div className="flex flex-col gap-4">
+      {/* Counter */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-mono tracking-widest uppercase" style={{ color: "var(--text-muted)" }}>
+          {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+        </span>
+        <div className="flex items-center gap-1.5">
+          {problems.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              className="rounded-full transition-all duration-200"
+              style={{
+                width:  i === index ? "20px" : "6px",
+                height: "6px",
+                background: i === index ? "var(--brand-accent)" : "var(--border-color)",
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Card */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={p.id}
+          className="rounded-2xl flex flex-col"
+          style={{
+            background: "color-mix(in srgb, var(--bg-surface) 85%, transparent)",
+            backdropFilter: "blur(16px)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)",
+            minHeight: "420px",
+            userSelect: "none",
+          }}
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -40 }}
+          transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
+          {/* Top accent strip */}
+          <div className="h-1 rounded-t-2xl" style={{
+            background: "linear-gradient(90deg, var(--brand-accent), #33AAFF 60%, transparent)",
+          }} />
+
+          <div className="flex flex-col flex-1 p-5 gap-4">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className="text-[9px] font-mono tracking-[0.22em] uppercase px-2.5 py-1 rounded-full"
+                  style={{ color: "var(--brand-accent)", background: "var(--accent-subtle)", border: "1px solid var(--border-accent)" }}
+                >
+                  {p.partner}
+                </span>
+                <span className="text-[9px] font-mono tracking-[0.18em] uppercase" style={{ color: "var(--text-muted)" }}>
+                  {p.track}
+                </span>
+              </div>
+              <span
+                className="font-display font-bold leading-none select-none flex-shrink-0"
+                style={{ fontSize: "3.5rem", letterSpacing: "-0.07em", color: "var(--bg-base)", WebkitTextStroke: "1px var(--border-color)" }}
+              >
+                {p.index}
+              </span>
+            </div>
+
+            {/* Title */}
+            <h3 className="font-display font-bold" style={{ fontSize: "clamp(1.3rem, 4vw, 1.6rem)", letterSpacing: "-0.03em", lineHeight: 1.1, color: "var(--text-primary)" }}>
+              {p.title}
+            </h3>
+
+            {/* Divider */}
+            <div className="h-px" style={{ background: "var(--border-color)" }} />
+
+            {/* Description */}
+            <p className="text-sm leading-relaxed flex-1" style={{ color: "var(--text-secondary)" }}>
+              {p.full}
+            </p>
+
+            {/* Constraints */}
+            <div>
+              <p className="text-[9px] font-mono tracking-[0.22em] uppercase mb-2" style={{ color: "var(--text-muted)" }}>Constraints</p>
+              <div className="flex flex-col gap-1.5">
+                {p.constraints.map((c, ci) => (
+                  <div key={ci} className="flex items-start gap-2 rounded-lg px-3 py-2" style={{ background: "var(--bg-base)", border: "1px solid var(--border-color)" }}>
+                    <span className="font-mono text-[10px] font-bold flex-shrink-0 mt-0.5" style={{ color: "var(--brand-accent)" }}>{String(ci + 1).padStart(2, "0")}</span>
+                    <span className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>{c}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* CTA */}
+            <motion.a
+              href="#register"
+              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold mt-auto"
+              style={{ background: "var(--brand-accent)", color: "#fff", boxShadow: "0 0 20px var(--accent-glow)" }}
+              whileTap={{ scale: 0.97 }}
+            >
+              Register for this track
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M7 17L17 7M17 7H7M17 7v10" />
+              </svg>
+            </motion.a>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Prev / Next buttons */}
+      <div className="flex items-center gap-3">
+        <motion.button
+          onClick={() => goTo(index - 1)}
+          disabled={index === 0}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold"
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-color)",
+            color: index === 0 ? "var(--text-muted)" : "var(--text-primary)",
+            opacity: index === 0 ? 0.4 : 1,
+          }}
+          whileTap={{ scale: 0.97 }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M19 12H5M5 12l7 7M5 12l7-7" />
+          </svg>
+          Prev
+        </motion.button>
+        <motion.button
+          onClick={() => goTo(index + 1)}
+          disabled={index === total - 1}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold"
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--border-color)",
+            color: index === total - 1 ? "var(--text-muted)" : "var(--text-primary)",
+            opacity: index === total - 1 ? 0.4 : 1,
+          }}
+          whileTap={{ scale: 0.97 }}
+        >
+          Next
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M5 12h14M14 5l7 7-7 7" />
+          </svg>
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+export default function ProblemsSection() {
+  const [active, setActive] = useState<Problem>(PROBLEMS[0]);
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const listRef    = useRef<HTMLDivElement>(null);
+  const mobileRef  = useRef<HTMLDivElement>(null);
+  const inView     = useInView(sectionRef, { once: false, amount: 0.1, margin: "0px 0px -150px 0px" });
+  const listInView = useInView(listRef, { once: false, amount: 0.3, margin: "0px 0px -150px 0px" });
+
+  return (
+    <section ref={sectionRef} id="problems" className="py-28 lg:py-36" style={{ background: "var(--bg-base)" }}>
       <div className="max-w-7xl mx-auto px-8 lg:px-20">
 
         {/* Header */}
         <motion.div
-          className="mb-14"
+          className="mb-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 20 }}
           transition={{ duration: 0.6, ease: SOFT }}
@@ -477,41 +662,43 @@ export default function ProblemsSection() {
           </div>
         </motion.div>
 
-        {/* Two-column layout — list LEFT, detail RIGHT */}
-        <div ref={sectionRef} className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-6 lg:gap-10 items-start">
+        {/* Mobile: swipeable card carousel */}
+        <div ref={mobileRef} className="lg:hidden">
+          <MobileCarousel problems={PROBLEMS} />
+        </div>
 
-          {/* LEFT — staircase list */}
-          {/* pr-16 reserves 64px on the right so stair steps don't get clipped */}
-          <div ref={listRef} className="flex flex-col gap-2 pr-16">
-            {PROBLEMS.map((p, i) => (
-              <StairItem
-                key={p.id}
-                p={p}
-                i={i}
-                isActive={active.id === p.id}
-                inView={listInView}
-                onClick={() => setActive(p)}
-              />
-            ))}
+        {/* Desktop: stair list + sticky panel */}
+        <div ref={listRef} className="hidden lg:grid grid-cols-[1fr_1.5fr] gap-10 items-start">
+          <div className="flex flex-col gap-2 pr-16">
+            <AnimatePresence mode="popLayout">
+              {PROBLEMS.map((p, i) => (
+                <StairItem
+                  key={p.id} p={p} i={i}
+                  isActive={active.id === p.id}
+                  inView={inView}
+                  onClick={() => setActive(p)}
+                />
+              ))}
+            </AnimatePresence>
           </div>
 
-          {/* RIGHT — detail panel */}
           <motion.div
             className="rounded-2xl overflow-y-auto sticky top-24 relative"
             style={{
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-color)",
+              background: "color-mix(in srgb, var(--bg-surface) 80%, transparent)",
+              backdropFilter: "blur(20px) saturate(150%)",
+              border: "1px solid rgba(255,255,255,0.08)",
               maxHeight: "calc(100vh - 8rem)",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.3)",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.2)",
             }}
             initial={{ opacity: 0, x: 56 }}
             animate={{ opacity: inView ? 1 : 0, x: inView ? 0 : 56 }}
             transition={{ duration: 0.7, ease: SOFT, delay: 0.12 }}
           >
             <div className="absolute top-0 left-6 right-6 h-px pointer-events-none"
-              style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent)" }} />
+              style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent)" }} />
             <div className="absolute bottom-0 left-6 right-6 h-px pointer-events-none"
-              style={{ background: "linear-gradient(90deg,transparent,rgba(0,0,0,0.3),transparent)" }} />
+              style={{ background: "linear-gradient(90deg,transparent,rgba(0,0,0,0.25),transparent)" }} />
             <div className="p-8">
               <AnimatePresence mode="wait" initial={false}>
                 <DetailContent key={active.id} p={active} />

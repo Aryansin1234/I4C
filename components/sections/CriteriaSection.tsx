@@ -69,7 +69,7 @@ function CriterionRow({ c, i, open, onToggle }: {
   c: typeof CRITERIA[0]; i: number; open: boolean; onToggle: () => void;
 }) {
   const ref    = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: false, amount: 0.3 });
+  const inView = useInView(ref, { once: false, amount: 0.3, margin: "0px 0px -150px 0px" });
 
   return (
     <motion.div
@@ -175,7 +175,7 @@ function CriterionRow({ c, i, open, onToggle }: {
                     className="h-full origin-left"
                     style={{ background: "linear-gradient(90deg, var(--brand-accent), #33AAFF)", boxShadow: "0 0 6px var(--accent-glow)" }}
                     initial={{ scaleX: 0 }}
-                    animate={{ scaleX: c.weight / 30 }}
+                    animate={{ scaleX: c.weight / 100 }}
                     transition={{ delay: 0.1, duration: 0.7, ease: EXPO }}
                   />
                 </div>
@@ -194,7 +194,18 @@ function CriterionRow({ c, i, open, onToggle }: {
 export default function CriteriaSection() {
   const [open, setOpen] = useState<number | null>(0);
   const headerRef = useRef<HTMLDivElement>(null);
-  const inView    = useInView(headerRef, { once: false, amount: 0.4 });
+  const inView    = useInView(headerRef, { once: false, amount: 0.4, margin: "0px 0px -150px 0px" });
+
+  // Donut chart: cumulative stroke-dasharray segments
+  const R = 54;
+  const CIRC = 2 * Math.PI * R;
+  let cumulative = 0;
+  const segments = CRITERIA.map((c) => {
+    const start = cumulative;
+    cumulative += c.weight;
+    return { ...c, start, frac: c.weight / 100 };
+  });
+  const COLORS = ["#0066FF", "#0077FF", "#0088FF", "#0099FF", "#33AAFF"];
 
   return (
     <section id="criteria" className="py-28 lg:py-36" style={{ background: "var(--bg-base)" }}>
@@ -211,16 +222,77 @@ export default function CriteriaSection() {
             <span className="w-8 h-px" style={{ background: "var(--border-color)" }} />
             <span className="text-[10px] font-mono tracking-[0.22em] uppercase" style={{ color: "var(--text-muted)" }}>{CRITERIA.length} criteria</span>
           </motion.div>
-          <div style={{ overflow: "hidden" }}>
-            <motion.h2
-              className="font-display font-bold"
-              style={{ fontSize: "clamp(2.4rem, 5vw, 4.5rem)", lineHeight: 1.0, letterSpacing: "-0.04em", color: "var(--text-primary)" }}
-              initial={{ y: "105%" }}
-              animate={{ y: inView ? "0%" : "105%" }}
-              transition={{ delay: 0.1, duration: 0.9, ease: SOFT }}
+          <div className="flex items-end justify-between gap-8">
+            <div style={{ overflow: "hidden" }}>
+              <motion.h2
+                className="font-display font-bold"
+                style={{ fontSize: "clamp(2.4rem, 5vw, 4.5rem)", lineHeight: 1.0, letterSpacing: "-0.04em", color: "var(--text-primary)" }}
+                initial={{ y: "105%" }}
+                animate={{ y: inView ? "0%" : "105%" }}
+                transition={{ delay: 0.1, duration: 0.9, ease: SOFT }}
+              >
+                What separates{" "}
+                <span style={{ color: "var(--brand-accent)" }}>winners.</span>
+              </motion.h2>
+            </div>
+
+            {/* Donut ring chart */}
+            <motion.div
+              className="hidden lg:flex flex-col items-center gap-3 flex-shrink-0"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: inView ? 1 : 0, scale: inView ? 1 : 0.8 }}
+              transition={{ delay: 0.3, duration: 0.7, ease: SOFT }}
             >
-              How you&apos;ll be judged.
-            </motion.h2>
+              <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: "rotate(-90deg)" }}>
+                {/* Track */}
+                <circle
+                  cx="65" cy="65" r={R}
+                  fill="none"
+                  stroke="var(--border-color)"
+                  strokeWidth="8"
+                />
+                {/* Segments */}
+                {segments.map((seg, si) => {
+                  const dashLen = seg.frac * CIRC;
+                  const offset  = -(seg.start / 100) * CIRC;
+                  return (
+                    <motion.circle
+                      key={seg.index}
+                      cx="65" cy="65" r={R}
+                      fill="none"
+                      stroke={COLORS[si]}
+                      strokeWidth="8"
+                      strokeLinecap="butt"
+                      strokeDasharray={`${dashLen} ${CIRC}`}
+                      strokeDashoffset={offset}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: inView ? 1 : 0 }}
+                      transition={{ delay: 0.4 + si * 0.08, duration: 0.5 }}
+                      style={{ filter: si === 0 ? `drop-shadow(0 0 4px ${COLORS[si]}88)` : "none" }}
+                    />
+                  );
+                })}
+                {/* Center label */}
+                <text
+                  x="65" y="65"
+                  textAnchor="middle" dominantBaseline="middle"
+                  style={{ transform: "rotate(90deg)", transformOrigin: "65px 65px", fontSize: "11px", fill: "var(--text-muted)", fontFamily: "monospace", letterSpacing: "0.08em" }}
+                >
+                  JUDGING
+                </text>
+              </svg>
+              {/* Legend dots */}
+              <div className="flex flex-col gap-1">
+                {segments.map((seg, si) => (
+                  <div key={seg.index} className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ background: COLORS[si] }} />
+                    <span className="text-[9px] font-mono tracking-[0.1em] uppercase" style={{ color: "var(--text-muted)" }}>
+                      {seg.label} <span style={{ color: COLORS[si] }}>{seg.weight}%</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </div>
 

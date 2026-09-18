@@ -164,8 +164,8 @@ export default function Navigation() {
       <motion.div
         className="fixed top-0 left-0 right-0 z-[100] flex justify-center"
         initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        animate={{ y: mobileOpen ? -80 : 0, opacity: mobileOpen ? 0 : 1 }}
+        transition={{ delay: mobileOpen ? 0 : 0.3, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       >
         <motion.nav
           className="flex items-center gap-0 rounded-2xl"
@@ -182,18 +182,17 @@ export default function Navigation() {
             transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)",
           }}
         >
-          {/* Logo */}
+          {/* Logo — always visible, dims slightly before scroll */}
           <motion.a
             href="#hero"
             onClick={(e) => { e.preventDefault(); smoothNav("#hero"); }}
             className="shrink-0 flex items-center"
             style={{
               paddingTop: "6px", paddingBottom: "6px",
-              paddingRight: scrolled ? "12px" : "0px",
+              paddingRight: scrolled ? "12px" : "8px",
               marginRight:  scrolled ? "4px"  : "0px",
               borderRight: scrolled ? "1px solid var(--border-color)" : "none",
-              opacity: scrolled ? 1 : 0,
-              pointerEvents: scrolled ? "auto" : "none",
+              opacity: 1,
               transition: "all 0.3s ease",
             }}
             whileHover={{ scale: 1.04 }}
@@ -297,11 +296,11 @@ export default function Navigation() {
 
       {/* ─── Scroll progress ─────────────────────────────────────── */}
       <motion.div
-        className="fixed top-0 left-0 right-0 z-[102] h-px origin-left"
+        className="fixed top-0 left-0 right-0 z-[102] h-[2px] origin-left"
         style={{
           background: "linear-gradient(90deg, #0044CC, #0066FF, #33AAFF)",
           scaleX: sv,
-          boxShadow: "0 0 6px #0066FF88",
+          boxShadow: "0 0 10px #0066FF99, 0 0 3px #0066FF",
         }}
       />
 
@@ -334,7 +333,7 @@ export default function Navigation() {
                 <ThemeToggle />
                 <button
                   onClick={() => setMobileOpen(false)}
-                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
                   style={{ border: "1px solid var(--border-color)", color: "var(--text-secondary)" }}
                   aria-label="Close menu"
                 >

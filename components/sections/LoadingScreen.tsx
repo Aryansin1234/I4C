@@ -138,8 +138,8 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
             />
 
             {/* Headline */}
-            <div className="relative z-10 text-center">
-              <div className="overflow-hidden">
+            <div className="relative z-10 text-center" style={{ overflow: "visible" }}>
+              <div style={{ overflow: "hidden", paddingBottom: "0.1em", marginBottom: "-0.1em" }}>
                 <motion.div
                   className="font-display font-bold"
                   style={{
@@ -147,6 +147,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                     lineHeight: 1.0,
                     letterSpacing: "-0.04em",
                     color: "#F0F0F2",
+                    paddingRight: "0.08em",
                   }}
                   initial={{ y: "105%" }}
                   animate={textIn ? { y: "0%" } : {}}
@@ -164,7 +165,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                   </span>
                 </motion.div>
               </div>
-              <div className="overflow-hidden">
+              <div style={{ overflowY: "hidden", overflowX: "visible", paddingBottom: "0.1em", marginBottom: "-0.1em" }}>
                 <motion.div
                   className="font-display font-bold"
                   style={{
@@ -172,6 +173,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
                     lineHeight: 1.0,
                     letterSpacing: "-0.04em",
                     color: "#0066FF",
+                    paddingRight: "0.08em",
                   }}
                   initial={{ y: "105%" }}
                   animate={textIn ? { y: "0%" } : {}}
